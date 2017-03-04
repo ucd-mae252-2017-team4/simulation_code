@@ -10,7 +10,8 @@ class SimulatedObject(object):
     DY_POS = 4
     DTHETA_POS = 5
 
-    def __init__(self, x=0, y=0, theta=0, dx=0, dy=0, dtheta=0):
+    def __init__(self, x=0, y=0, theta=0, dx=0, dy=0, dtheta=0,
+        m=0, w=0, h=0):
         # self.x, self.y, self.theta = x, y, theta
         # self.dx, self.dy, self.dtheta = dx, dy, dtheta
 
@@ -21,6 +22,10 @@ class SimulatedObject(object):
         self.state_trajectory[0,type(self).DX_POS] = dx
         self.state_trajectory[0,type(self).DY_POS] = dy
         self.state_trajectory[0,type(self).DTHETA_POS] = dtheta
+
+        self.m = m
+        self.w, self.h = w, h
+        self.izz = m*(w**2 + h**2)/12
 
     @property
     def x(self):
@@ -46,7 +51,19 @@ class SimulatedObject(object):
     def dtheta(self):
         return self.state_trajectory[-1,type(self).DTHETA_POS]
 
-    def time_step(dx,dy,dtheta)
+    @property
+    def positions(self):
+        return self.state_trajectory[-1,
+            [type(self).X_POS,type(self).Y_POS,type(self).THETA_POS]
+          ]
+
+    @property
+    def velocities(self):
+        return self.state_trajectory[-1,
+            [type(self).DX_POS,type(self).DY_POS,type(self).DTHETA_POS]
+          ]
+
+    def time_step(self,dx,dy,dtheta):
         new_state = np.zeros((1,6))
 
         new_state[0,type(self).DX_POS] = dx
@@ -63,11 +80,12 @@ class SimulatedObject(object):
 
 class Robot(SimulatedObject):
     def __init__(self, x, y, theta, dx=0, dy=0, dtheta=0):
-        super().__init__(x,y,theta, dx, dy, dtheta)
+        super().__init__(x,y,theta, dx, dy, dtheta, 
+            m=24.5, w=12*2.54E-2,h=12*2.54E-2)
 
 class Simulator(object):
     def __init__(*list_of_objects):
         self.objects = list_of_objects
 
     def simulate(n_steps):
-
+        pass

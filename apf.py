@@ -42,7 +42,3 @@ def apf_path_planner(robot,goal,humans,module_size=(8.5,4.3),
 
 
 
-trial1path = apf_path_planner()
-trial2path = astar_path_planner()
-
-humans = [ human1, human2]

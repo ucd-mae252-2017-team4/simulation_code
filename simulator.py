@@ -1,6 +1,24 @@
 import numpy as np
 
-''' Is this the robot itself? '''
+'''
+
+Is this the robot itself? 
+
+Yes, I forgot that only the robot moves. So SimulatedOject could just have
+3 states for position+orientation. Then we could move the velocity stuff to
+Robot. Although the other weird thing is that only APF really needs any 
+numerical integration code. I think A* generates paths directly as part of the 
+algorith, so it shouldn't need to use any of the "simulator" stuff directly,
+as far as I can tell.
+
+If we want a shared object for obstacles (humans) and the robot, I think the 
+main benfeit would be a common interface for position and orientaiton, and we
+could also include some "drawing" functions which may mean we want to add a 
+shape or something. Or just humans are always ellipses/spheres/wahtever and the 
+robot is always a square.
+
+
+'''
 class SimulatedObject(object):
     X_POS = 0
     Y_POS = 1
@@ -28,6 +46,8 @@ class SimulatedObject(object):
 
     
     #what is the -1 doing here?
+    # state_trajectory is the entire state trajectory, -1 grabs the last row
+    # then type(self).<var>_POS grabs the appropraite column
     @property
     def x(self):
         return self.state_trajectory[-1,type(self).X_POS]
@@ -78,15 +98,30 @@ class SimulatedObject(object):
         self.state_trajectory = np.vstack((self.state_trajectory, new_state))
         
 
-""" what is going on here? 
-I'm assuming m/w/h are mass, width, height? what kind of weird units are these? """
+"""
+
+what is going on here? 
+
+I'm assuming m/w/h are mass, width, height? what kind of weird units are these?
+
+yes. I'm using SI units. I think the robot is 24.5 kg and 12x12 inches so 0.3m
+
+"""
 class Robot(SimulatedObject):
     def __init__(self, x, y, theta, dx=0, dy=0, dtheta=0):
         super().__init__(x,y,theta, dx, dy, dtheta, 
             m=24.5, w=12*2.54E-2,h=12*2.54E-2)
 
-"""what is the list of objects supposed to be? Is this a grouping of module/humans/movement requirements?
-does this interact with apf? What does it interact with? """
+"""
+what is the list of objects supposed to be? Is this a grouping of module/humans/movement requirements?
+does this interact with apf? What does it interact with?
+
+So I'm not sure that this class is actually necessary anymore. Originally yes,
+it was going to hold a list of the humans and maybe module parameters or 
+something. But I think the way I did it in the readme is better, and it doesn't
+need this class.
+
+"""
 class Simulator(object):
     def __init__(*list_of_objects):
         self.objects = list_of_objects

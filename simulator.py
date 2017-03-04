@@ -1,7 +1,6 @@
 import numpy as np
 
-## test
-
+''' Is this the robot itself? '''
 class SimulatedObject(object):
     X_POS = 0
     Y_POS = 1
@@ -27,6 +26,8 @@ class SimulatedObject(object):
         self.w, self.h = w, h
         self.izz = m*(w**2 + h**2)/12
 
+    
+    #what is the -1 doing here?
     @property
     def x(self):
         return self.state_trajectory[-1,type(self).X_POS]
@@ -77,15 +78,19 @@ class SimulatedObject(object):
         self.state_trajectory = np.vstack((self.state_trajectory, new_state))
         
 
-
+""" what is going on here? 
+I'm assuming m/w/h are mass, width, height? what kind of weird units are these? """
 class Robot(SimulatedObject):
     def __init__(self, x, y, theta, dx=0, dy=0, dtheta=0):
         super().__init__(x,y,theta, dx, dy, dtheta, 
             m=24.5, w=12*2.54E-2,h=12*2.54E-2)
 
+"""what is the list of objects supposed to be? Is this a grouping of module/humans/movement requirements?
+does this interact with apf? What does it interact with? """
 class Simulator(object):
     def __init__(*list_of_objects):
         self.objects = list_of_objects
 
+    ''' is this running through time steps and recording data? '''
     def simulate(n_steps):
         pass

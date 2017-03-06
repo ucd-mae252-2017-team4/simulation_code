@@ -74,6 +74,8 @@ def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; 
 	
 	return cost
 
-crew_radius = 0 #Figure this out
+crew_radius = 14/2 #Determines the space taken up by crew profile
+#Shoulder width given in inches; based on average of shoulder width for 95% male and 5% female,
+#which fall within height requirements for astronauts; average relationship between height and shoulder width
+#Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
 #Assume profile to be a circle for simplicity
-#Diameter of profile will be based on average shoulder width for minimum crew size

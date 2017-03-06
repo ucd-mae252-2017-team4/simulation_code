@@ -5,7 +5,8 @@ def radial_force_function(human_position, robot_position):
     return field_value
 
 def default_goal_force_function(goal, robot):
-    return force_value
+    k = 0 #
+    return k*np.array([goal[0] - robot.x, goal[1] - robot.y, 0])
 
 def default_boundary_force_function(robot,module_size):
     return force_value
@@ -23,6 +24,7 @@ def apf_path_planner(robot,goal,humans,module_size=(8.5,4.3),
         force_vector += boundary_force_function(robot, module_size)
         for human in humans:
             force_vector += human_force_function(human,robot)
+
 
         robot.time_step(
             force_vector[0]/robot.m + robot.dx,

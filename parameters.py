@@ -1,3 +1,5 @@
+import numpy as np
+
 def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on the mission ID
 #All mission coordinates are given in feet
 #All mission coordinates are placed 1 ft from the edges
@@ -12,15 +14,14 @@ def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on th
 	#wp4 is the same as mission1
 	mission3 = [(1,1),(27,1),(27,13),(1,13),(0,14)] #Mission 3 circulations through the module on a monitoring task and returns to the start point
 #Select the desired mission coordinates
-	if mission_id = 1:
+	if mission_id == 1:
 		wp = mission1
-	else if mission_id = 2:
+	elif mission_id == 2:
 		wp = mission2
-	else if mission_id = 3:
+	elif mission_id == 3:
 		wp = mission3
 	else:
-		fprint('Not a valid mission ID! (Valid codes: 1 = direct, 2 = waypoints, 3 = monitoring)')
-	end
+		print('Not a valid mission ID! (Valid codes: 1 = direct, 2 = waypoints, 3 = monitoring)')
 
 	return wp
 
@@ -33,24 +34,33 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 	crew4 = [(12,12,102),(21,9,44),(22,11,39),(6,9,359)] #Four crew randomly generated from excel
 	#Add check for crew4 to make sure crew not on top of each other
 #Select the desired crew coordinates
-	if crew_id = 1:
+	if crew_id == 1:
 		cp = crew1
-	else if crew_id = 2:
+	elif crew_id == 2:
 		cp = crew2
-	else if crew_id = 3:
+	elif crew_id == 3:
 		cp = crew3
-	else if crew_id = 4:
+	elif crew_id == 4:
 		cp = crew4
 	else:
-		fprint('Not a valid crew ID! (Valid codes: 1 = one crew, 2 = opposing, 3 = cluster, 4 = random)')
-	end
+		print('Not a valid crew ID! (Valid codes: 1 = one crew, 2 = opposing, 3 = cluster, 4 = random)')
 
 	return cp
 
 def proxemic_function(): #Mathematical function to define the potential field and cost 
+	pass
 
-def nonproxemic_function(): #Use collision avoidance for humans; no proxemics
+def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics
+	for x,y,theta in cp:
+	gradient = np.array([df/dx, df/dy])
+	
+	return gradient
 
-def crew(): #Defines the size and shape of crew
+def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; no proxemics
+	
+	cost = f(x,y)
+	
+	return cost
+crew_radius = 0 #Figure this out
 #Assume profile to be a circle for simplicity
 #Diameter of profile will be based on average shoulder width for minimum crew size

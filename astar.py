@@ -13,16 +13,22 @@ Starting with pseudocode, then expanding from there
 3) Output chosen path as an ordered list of (x,y) tuples. This should allow for appropriate analysis
 '''
 
-#weighted graph
+##################################################################################
+##  weighted graph -> 															##
+##	     ndarray; vertex coordinates are the indices, stored values are weights ##
+##################################################################################
 weights = ndarray initialized with ones
+- setup "infinite" weights for wall boundaries
 for each human in  humans:
 	update appropriate weights 
 	''' (NOTE: WEIGHTS NEED DIRECTIONS. 
 	Can do this by assigning positive/negative weights 
-	always corresponding with left to right, bottom to top) '''
+	always corresponding with left to right, bottom to top 
+	OR by making weights tuples) '''
 
-
-#A*
+########
+## A* ##
+########
 for each start-to-waypoint path: 
 	from start point : add adjacent (admissible = no loops) vertices to minimum priority queue with appropriate v.pi
 		'''(store each as list of tuples, add new vertex to end, 
@@ -33,5 +39,10 @@ for each start-to-waypoint path:
 	''' let's keep a dict of visited nodes '''
 	update visited nodes dict
 
-once endpoint is pulled out of top of min-priority queue, return list of tuples
+############
+## return ##
+############
+once endpoint is pulled out of top of min-priority queue:
+	check path for collisions with humans
+	return list of tuples
 

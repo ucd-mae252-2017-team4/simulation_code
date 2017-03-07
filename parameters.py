@@ -74,13 +74,13 @@ def proxemic_astar_function(): #Mathematical function to define the potential fi
 	A = 1
 
 	for x,y,theta in cp:
-		#Calculate alpha (figure out where the robot is located)
+		alpha = np.arctan((robot.y-y)/(robot.x-x)) - theta + math.pi/2 #Determine where the robot is located in relation to front, side, or back of crew
 		if alpha == 0:
 			sigma = sigma_s
 		elif alpha > 0:
-			sigma =
+			sigma = sigma_r
 		elif alpha < 0:
-			sigma =
+			sigma = sigma_h
 		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
 		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
 		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)

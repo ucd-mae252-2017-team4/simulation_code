@@ -38,7 +38,12 @@ def draw_path(robot_path, mission, crew):
 
 
     for wp in mission:
-        pass
+        plt.gca().add_patch(
+            plt.Circle(
+                wp,
+                radius=simulator.spheres_width*1.5,
+                ec='m',fill=False, lw=3
+            ))
 
     plt.xlim((0,parameters.module_size[0]))
     plt.ylim((0,parameters.module_size[1]))

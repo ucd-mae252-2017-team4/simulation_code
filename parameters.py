@@ -53,8 +53,8 @@ def proxemic_function(): #Mathematical function to define the potential field an
 def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for APF only
 	dfdx = 0
 	dfdy = 0
-	A = 0 #Figure out this value; magnitude of distribution
-	sigma = 0 #Figure out this value; width of distribution; equal in x and y
+	A = 1 #Figure out this value; magnitude of distribution
+	sigma = 2 #Figure out this value; width of distribution; equal in x and y
 
 	for x,y,theta in cp:
 		dfdx += -(robot.x - x)*(A/sigma)*exp(-((robot.x-x)^2/(2*sigma^2)+(robot.y-y)^2/(2*sigma^2)))

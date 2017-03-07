@@ -4,6 +4,7 @@
 import numpy as np
 import queue as * 
 import simulator.py as simulator
+from parameters.py import *
 
 
 ''' 
@@ -12,11 +13,31 @@ Starting with pseudocode, then expanding from there
 2) A*
 3) Output chosen path as an ordered list of (x,y) tuples. This should allow for appropriate analysis
 '''
+#################
+##  VARIABLES  ##
+## in SI units ##
+#################
+MODULE_WIDTH, MODULE_LENGTH = 4.3, 8.5 #meters; Destiny Module
+ROBOT_WIDTH = 12.*0.0254 #12" in meters
+ROBOT_MASS = 6. # kg
+
+MESH_SIZE = 100
+
+
+useProxemics = FALSE
 
 ##################################################################################
 ##  weighted graph -> 															##
 ##	     ndarray; vertex coordinates are the indices, stored values are weights ##
 ##################################################################################
+
+weights = ndarray.ones(MODULE_WIDTH*MESH_SIZE,MODULE_LENGTH*MESH_SIZE) # this might break if we change mesh size, make sure they're integers
+
+# add in humans
+if !useProxemics:
+	# crew = select_crew(crewID)
+
+
 weights = ndarray initialized with ones
 - setup "infinite" weights for wall boundaries
 for each human in  humans:

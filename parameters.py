@@ -50,17 +50,32 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 def proxemic_function(): #Mathematical function to define the potential field and cost 
 	pass
 
-def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics
+def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for APF only
+	dfdx = 0
+	dfdy = 0
+	A = 0 #Figure out this value; magnitude of distribution
+	sigma = 0 #Figure out this value; width of distribution; equal in x and y
+
 	for x,y,theta in cp:
-	gradient = np.array([df/dx, df/dy])
+		dfdx += -(robot.x - x)*(A/sigma)*exp(-((robot.x-x)^2/(2*sigma^2)+(robot.y-y)^2/(2*sigma^2)))
+		dfdy += -(robot.y - y)*(A/sigma)*exp(-((robot.x-x)^2/(2*sigma^2)+(robot.y-y)^2/(2*sigma^2)))
+
+	gradient = np.array([dfdx, dfdy, 0])
 	
 	return gradient
 
-def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; no proxemics
-	
-	cost = f(x,y)
+def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for A* only
+	cost = 0
+	A = 0 #Figure out this value; magnitude of distribution
+	sigma = 0 #Figure out this value; width of distribution; equal in x and y
+
+	for x,y,theta in cp:
+		cost += A*exp(-((robot.x-x)^2/(2*sigma^2)+(robot.y-y)^2/(2*sigma^2)))
 	
 	return cost
-crew_radius = 0 #Figure this out
+
+crew_radius = 14/2 #Determines the space taken up by crew profile
+#Shoulder width given in inches; based on average of shoulder width for 95% male and 5% female,
+#which fall within height requirements for astronauts; average relationship between height and shoulder width
+#Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
 #Assume profile to be a circle for simplicity
-#Diameter of profile will be based on average shoulder width for minimum crew size

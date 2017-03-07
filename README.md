@@ -24,7 +24,7 @@ where ``trial1path`` and ``trial2path`` are arrays of dimension (T,6). We could 
 ```python
 import simulator, apf, parameters
 
-robby = simulator.Robot(1,7,0) # set robt initial position + orientation
+robby = simulator.Robot(12*2.54E-2,7*12*2.54E-2,0) # set robt initial position + orientation
 mission = parameters.select_mission(1)[0]
 crew = []
 apf.apf_path_planner(robby, mission, crew, parameters.nonproxemic_apf_function)

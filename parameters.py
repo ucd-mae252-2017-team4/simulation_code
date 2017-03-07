@@ -1,6 +1,8 @@
 import numpy as np
 import math
 
+module_size = (28*12*2.54E-2,14*12*2.54E-2)
+
 def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on the mission ID
 #All mission coordinates are given in meters
 #All mission coordinates are placed 1 ft from the edges
@@ -63,8 +65,8 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 	A = 1/(2*math.pi*sigma**2)
 
 	for x,y,theta in cp:
-		dfdx += -(robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
-		dfdy += -(robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		dfdy += (robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
 
 	gradient = np.array([dfdx, dfdy, 0])
 	

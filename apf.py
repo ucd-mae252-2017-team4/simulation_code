@@ -1,5 +1,5 @@
 import numpy as np 
-
+import parameters
 def proxemic_force_function(human_position, robot_position):
     return field_value
 
@@ -7,13 +7,21 @@ def radial_force_function(human_positions, robot_position):
     return force_value
 
 def linear_goal_force_function(robot, goal):
-    k = 2 #
-    return k*np.array([goal[0] - robot.x, goal[1] - robot.y, 0])
+    k = 2**-2 #
+    max_factor = 2**4
+    return np.clip(
+        k*np.array([goal[0] - robot.x, goal[1] - robot.y, 0]),
+        [-max_factor*k,-max_factor*k,-max_factor*k],
+        [max_factor*k,max_factor*k,max_factor*k],        
+    )
+
+def constant_goal_force_function(robot, goal):
+    pass
 
 def gaussian_boundary_force_function(robot, module_size):
     dfdx = 0
     dfdy = 0
-    A = 1 #Figure out this value; magnitude of distribution
+    A = 2**-6 #Figure out this value; magnitude of distribution
     sigma = 6*2.54E-2 #Figure out this value; width of distribution; equal in x and y
     for x,y in [(0,0),module_size]:
         dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2/(2*sigma**2)))
@@ -23,7 +31,7 @@ def gaussian_boundary_force_function(robot, module_size):
 
 def apf_path_planner(robot,goal,humans,
   human_force_function,
-  module_size=(28*12*2.54E-2,14*12*2.54E-2),
+  module_size=parameters.module_size,
   boundary_force_function=gaussian_boundary_force_function,
   goal_force_function=linear_goal_force_function):
 

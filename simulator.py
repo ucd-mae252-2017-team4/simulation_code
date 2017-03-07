@@ -107,10 +107,14 @@ I'm assuming m/w/h are mass, width, height? what kind of weird units are these?
 yes. I'm using SI units. I think the robot is 24.5 kg and 12x12 inches so 0.3m
 
 """
+
+spheres_width = 12*2.54E-2
+spheres_height = 12*2.54E-2
+
 class Robot(SimulatedObject):
     def __init__(self, x, y, theta, dx=0, dy=0, dtheta=0):
         super().__init__(x,y,theta, dx, dy, dtheta, 
-            m=24.5, w=12*2.54E-2,h=12*2.54E-2)
+            m=24.5, w=spheres_width,h=spheres_height)
 
 """
 what is the list of objects supposed to be? Is this a grouping of module/humans/movement requirements?

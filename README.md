@@ -18,3 +18,16 @@ trial2path = astar_path_planner(robby,case1humans,human_cost_function=proxemic_c
 ```
 
 where ``trial1path`` and ``trial2path`` are arrays of dimension (T,6). We could then plot/draw the trajectories, determine whether there has been any collisions, etc.
+
+
+
+```python
+import simulator, apf, parameters, viz
+
+robby = simulator.Robot(12*2.54E-2,7*12*2.54E-2,0) # set robt initial position + orientation
+mission = parameters.select_mission(1)[0]
+crew = [(4.2672,2.0,3.14159)]
+apf.apf_path_planner(robby, mission, crew, parameters.nonproxemic_apf_function)
+viz.draw_path(robby.state_trajectory,mission,crew)
+```
+

@@ -2,6 +2,11 @@ import numpy as np
 import math
 
 module_size = (28*12*2.54E-2,14*12*2.54E-2)
+crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
+#Shoulder width given in inches and converted to meters; based on average of shoulder width for 95% male and 5% female,
+#which fall within height requirements for astronauts; average relationship between height and shoulder width
+#Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
+#Assume profile to be a circle for simplicity
 
 def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on the mission ID
 #All mission coordinates are given in meters
@@ -59,8 +64,22 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 
 	return cp
 
-def proxemic_function(): #Mathematical function to define the potential field and cost 
-	pass
+def proxemic_apf_function(): #Mathematical function to define the potential field and cost 
+	dfdx = 0
+	dfdy = 0
+	v = (robot.dx**2 + robot.dy**2)**(1/2) #relative velocity between robot and human (stationary)
+	sigma_h = 2*v
+	sigma_s = (2/3)*sigma_h
+	sigma_r = (1/2)*sigma_h
+	A = 1
+
+	for x,y,theta in cp:
+		dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		dfdy += (robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+
+	gradient = np.array([dfdx, dfdy, 0])
+	
+	return gradient
 
 def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for APF only
 	dfdx = 0
@@ -85,9 +104,3 @@ def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; 
 		cost += A*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
 	
 	return cost
-
-crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
-#Shoulder width given in inches and converted to meters; based on average of shoulder width for 95% male and 5% female,
-#which fall within height requirements for astronauts; average relationship between height and shoulder width
-#Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
-#Assume profile to be a circle for simplicity

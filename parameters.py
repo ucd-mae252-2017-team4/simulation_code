@@ -64,7 +64,7 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 
 	return cp
 
-def proxemic_apf_function(): #Mathematical function to define the potential field and cost 
+def proxemic_astar_function(): #Mathematical function to define the potential field and cost 
 	dfdx = 0
 	dfdy = 0
 	v = (robot.dx**2 + robot.dy**2)**(1/2) #relative velocity between robot and human (stationary)
@@ -74,12 +74,20 @@ def proxemic_apf_function(): #Mathematical function to define the potential fiel
 	A = 1
 
 	for x,y,theta in cp:
-		dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
-		dfdy += (robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
-
-	gradient = np.array([dfdx, dfdy, 0])
+		#Calculate alpha (figure out where the robot is located)
+		if alpha == 0:
+			sigma = sigma_s
+		elif alpha > 0:
+			sigma =
+		elif alpha < 0:
+			sigma =
+		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
+		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
+		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)
+		
+		cost += A*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
 	
-	return gradient
+	return cost
 
 def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for APF only
 	dfdx = 0

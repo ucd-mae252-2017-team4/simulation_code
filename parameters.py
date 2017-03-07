@@ -1,6 +1,13 @@
 import numpy as np
 import math
 
+module_size = (28*12*2.54E-2,14*12*2.54E-2)
+crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
+#Shoulder width given in inches and converted to meters; based on average of shoulder width for 95% male and 5% female,
+#which fall within height requirements for astronauts; average relationship between height and shoulder width
+#Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
+#Assume profile to be a circle for simplicity
+
 def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on the mission ID
 #All mission coordinates are given in meters
 #All mission coordinates are placed 1 ft from the edges
@@ -36,8 +43,13 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 	crew4 = [(3.6576,3.6576,1.78024),(6.4008,2.7432,0.767945),(6.7056,3.3528,0.680678),(1.8288,2.7432,6.26573)] #Four crew randomly generated from excel (12,12,102),(21,9,44),(22,11,39),(6,9,359)
 #Check for crew4 to make sure crew not on top of each other
 	for i in range(len(crew4)):
-		for j in range(i+1, len(crew4))
-			
+		for j in range(i+1, len(crew4)):
+			d = ((crew4[j][0]-crew4[i][0])**2+(crew4[j][1]-crew4[i][1])**2)**(1/2) #Distance between crew centers
+			print(crew4[i])
+			print(crew4[j])
+			print(d)
+			if d <= crew_radius*2:
+				print("Crew members overlapping; generate new random positions")
 #Select the desired crew coordinates
 	if crew_id == 1:
 		cp = crew1
@@ -52,8 +64,30 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 
 	return cp
 
-def proxemic_function(): #Mathematical function to define the potential field and cost 
-	pass
+def proxemic_astar_function(): #Mathematical function to define the potential field and cost 
+	dfdx = 0
+	dfdy = 0
+	v = (robot.dx**2 + robot.dy**2)**(1/2) #relative velocity between robot and human (stationary)
+	sigma_h = 2*v
+	sigma_s = (2/3)*sigma_h
+	sigma_r = (1/2)*sigma_h
+	A = 1
+
+	for x,y,theta in cp:
+		alpha = np.arctan((robot.y-y)/(robot.x-x)) - theta + math.pi/2 #Determine where the robot is located in relation to front, side, or back of crew
+		if alpha == 0:
+			sigma = sigma_s
+		elif alpha > 0:
+			sigma = sigma_r
+		elif alpha < 0:
+			sigma = sigma_h
+		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
+		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
+		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)
+		
+		cost += A*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
+	
+	return cost
 
 def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for APF only
 	dfdx = 0
@@ -62,8 +96,8 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 	A = 1/(2*math.pi*sigma**2)
 
 	for x,y,theta in cp:
-		dfdx += -(robot.x - x)*(A/sigma**2)*exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
-		dfdy += -(robot.y - y)*(A/sigma**2)*exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		dfdy += (robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
 
 	gradient = np.array([dfdx, dfdy, 0])
 	
@@ -75,12 +109,6 @@ def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; 
 	A = 1/(2*math.pi*sigma**2)
 
 	for x,y,theta in cp:
-		cost += A*exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		cost += A*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
 	
 	return cost
-
-crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
-#Shoulder width given in inches and converted to meters; based on average of shoulder width for 95% male and 5% female,
-#which fall within height requirements for astronauts; average relationship between height and shoulder width
-#Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
-#Assume profile to be a circle for simplicity

@@ -6,6 +6,7 @@ import simulator
 crew_color = 'k'
 plt.ion()
 
+# np array columns: x,y,theta
 def draw_path(robot_path, mission, crew):
     plt.figure()
 
@@ -13,7 +14,7 @@ def draw_path(robot_path, mission, crew):
     plt.axis('scaled')
 
 
-    for cx,cy,ct in crew:
+    for cx,cy,ct in crew: #crew x, crew y, crew theta
         plt.gca().add_patch(
             plt.Circle(
                 (cx,cy),

@@ -36,6 +36,10 @@ weights = ndarray.ones(MODULE_WIDTH*MESH_SIZE,MODULE_LENGTH*MESH_SIZE) # this mi
 # add in humans
 if !useProxemics:
 	# crew = select_crew(crewID)
+	for member in crew:
+		# use nonproxemic_astar_function
+else 
+	# do the whole proxemics thing
 
 
 weights = ndarray initialized with ones

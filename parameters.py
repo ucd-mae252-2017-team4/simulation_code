@@ -64,27 +64,79 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 
 	return cp
 
-def proxemic_astar_function(): #Mathematical function to define the potential field and cost 
-	dfdx = 0
-	dfdy = 0
-	v = (robot.dx**2 + robot.dy**2)**(1/2) #relative velocity between robot and human (stationary)
-	sigma_h = 2*v
-	sigma_s = (2/3)*sigma_h
-	sigma_r = (1/2)*sigma_h
-	A = 1
+def determine_constants(robot, cp)
+	v = (robot.dx**2 + robot.dy**2)**(1/2) #Relative velocity between robot and human (stationary)
+	sigma_h = 2*v #From thesis appendix
+	sigma_s = (2/3)*sigma_h #From thesis appendix
+	sigma_r = (1/2)*sigma_h #From thesis appendix
+	r = []
+ #Determine where the robot is located in relation to front, side, or back of crew
+	for i in range(len(cp)):
+		x = cp[i][0]  
+		y = cp[i][1]
+		theta = cp[i][2]
 
-	for x,y,theta in cp:
-		alpha = np.arctan((robot.y-y)/(robot.x-x)) - theta + math.pi/2 #Determine where the robot is located in relation to front, side, or back of crew
-		if alpha == 0:
-			sigma = sigma_s
-		elif alpha > 0:
-			sigma = sigma_r
-		elif alpha < 0:
-			sigma = sigma_h
+		alpha = np.arctan2((robot.y-y),(robot.x-x))
+		if alpha < 0:
+			alpha += 2*math.pi
+		
+		s1 = theta + math.pi/2
+
+		if (theta <= math.pi/2) or (theta > (3/2)*math.pi):
+			s2 = s1 + math.pi
+			if s1 < alpha < s2:
+				sigma = sigma_r
+			elif (alpha == s1) or (alpha == s2):
+				sigma = sigma_s
+			else:
+				sigma = sigma_h
+		else:
+			s2 = s1 - math.pi
+			if s2 < alpha < s1:
+				sigma = sigma_h		
+			elif (alpha == s1) or (alpha == s2):
+				sigma = sigma_s
+			else:
+				sigma = sigma_r
+		
 		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
 		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
 		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)
-		
+		ans = (a,b,c)
+		r.append(ans)
+
+	return r
+
+def proxemic_apf_function(robot, cp, r):
+	dfdx = 0
+	dfdy = 0
+	A = 1
+
+	for i in range(len(cp)):
+		x = cp[i][0]  
+		y = cp[i][1]
+		a = r[i][0]
+		b = r[i][1]
+		c = r[i][2]
+
+		dfdx += A*(2*a*(robot.x-x)+2*b*(robot.y-y))*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
+		dfdy += A*(2*b*(robot.x-x)+2*c*(robot.y-y))*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
+	
+	gradient = np.array([dfdx, dfdy, 0])
+	
+	return gradient
+
+def proxemic_astar_function(robot, cp, r): #Mathematical function to define the potential field and cost 
+	cost = 0
+	A = 1
+	
+	for i in range(len(cp)):
+		x = cp[i][0]  
+		y = cp[i][1]
+		a = r[i][0]
+		b = r[i][1]
+		c = r[i][2]
+
 		cost += A*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
 	
 	return cost
@@ -93,9 +145,9 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 	dfdx = 0
 	dfdy = 0
 	sigma = (14/12)*0.3048 #Use crew shoulder width (meters); equal in x and y
-	A = 1/(2*math.pi*sigma**2)
+	A = 1
 
-	for x,y,theta in cp:
+	for x,y,theta in cp: #Ask Ben about syntax, compare to proxemic
 		dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
 		dfdy += (robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
 
@@ -106,7 +158,7 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for A* only
 	cost = 0
 	sigma = (14/12)*0.3048 #Use crew shoulder width (meters); equal in x and y
-	A = 1/(2*math.pi*sigma**2)
+	A = 1
 
 	for x,y,theta in cp:
 		cost += A*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))

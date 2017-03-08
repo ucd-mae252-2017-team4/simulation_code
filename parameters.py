@@ -64,23 +64,54 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 
 	return cp
 
-def proxemic_astar_function(): #Mathematical function to define the potential field and cost 
-	dfdx = 0
-	dfdy = 0
-	v = (robot.dx**2 + robot.dy**2)**(1/2) #relative velocity between robot and human (stationary)
-	sigma_h = 2*v
-	sigma_s = (2/3)*sigma_h
-	sigma_r = (1/2)*sigma_h
-	A = 1
+def determine_sigma(robot, cp)
+	v = (robot.dx**2 + robot.dy**2)**(1/2) #Relative velocity between robot and human (stationary)
+	sigma_h = 2*v #From thesis appendix
+	sigma_s = (2/3)*sigma_h #From thesis appendix
+	sigma_r = (1/2)*sigma_h #From thesis appendix
+	s = []
+ #Determine where the robot is located in relation to front, side, or back of crew
+	for i in range(len(cp)):
+		x = cp[i][0]  
+		y = cp[i][1]
+		theta = cp[i][2]
 
-	for x,y,theta in cp:
-		alpha = np.arctan((robot.y-y)/(robot.x-x)) - theta + math.pi/2 #Determine where the robot is located in relation to front, side, or back of crew
-		if alpha == 0:
-			sigma = sigma_s
-		elif alpha > 0:
-			sigma = sigma_r
-		elif alpha < 0:
-			sigma = sigma_h
+		alpha = np.arctan2((robot.y-y),(robot.x-x))
+		if alpha < 0:
+			alpha += 2*math.pi
+		
+		s1 = theta + math.pi/2
+
+		if (theta <= math.pi/2) or (theta > (3/2)*math.pi):
+			s2 = s1 + math.pi
+			if s1 < alpha < s2:
+				sigma = sigma_r
+			elif (alpha == s1) or (alpha == s2):
+				sigma = sigma_s
+			else:
+				sigma = sigma_h
+		else:
+			s2 = s1 - math.pi
+			if s2 < alpha < s1:
+				sigma = sigma_h		
+			elif (alpha == s1) or (alpha == s2):
+				sigma = sigma_s
+			else:
+				sigma = sigma_r
+		s.append(sigma)
+	return s, sigma_s
+
+def proxemic_astar_function(robot, cp, s, sigma_s):
+	pass
+
+def proxemic_astar_function(robot, cp, s, sigma_s): #Mathematical function to define the potential field and cost 
+	A = 1
+	for i in range(len(cp)):
+		x = cp[i][0]  
+		y = cp[i][1]
+		theta = cp[i][2]
+		sigma = s[i]
+
 		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
 		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
 		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)

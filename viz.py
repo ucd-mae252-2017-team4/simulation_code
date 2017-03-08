@@ -27,14 +27,20 @@ def draw_path(robot_path, mission, crew):
                 color=crew_color
             ))
 
-    for idx in range(0,robot_path.shape[0],10):
-        plt.gca().add_patch(plt.Rectangle(
-            (robot_path[idx,0]-simulator.spheres_width/2,robot_path[idx,1]-simulator.spheres_height/2), 
-            width=simulator.spheres_width,
-            height=simulator.spheres_height,
-            angle=robot_path[idx,2],
-            ec='b',
-            fill=False))      
+    last_x = -100
+    last_y = -100
+    for idx in range(robot_path.shape[0]):
+        x,y = robot_path[idx,0], robot_path[idx,1]
+        if (np.linalg.norm(np.array([x-last_x,y-last_y])) >= 2* simulator.spheres_width) or (idx == robot_path.shape[0]-1):
+            plt.gca().add_patch(plt.Rectangle(
+                (robot_path[idx,0]-simulator.spheres_width/2,y-simulator.spheres_height/2), 
+                width=simulator.spheres_width,
+                height=simulator.spheres_height,
+                angle=robot_path[idx,2],
+                ec='b',
+                fill=False)) 
+            last_x = x
+            last_y = y    
 
 
     for wp in mission:

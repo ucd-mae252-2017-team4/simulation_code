@@ -1,7 +1,6 @@
 import matplotlib as ml, matplotlib.pyplot as plt
 import parameters
 import numpy as np
-import simulator
 
 crew_color = 'k'
 plt.ion()
@@ -32,11 +31,11 @@ def draw_path(robot_path, mission, crew):
     last_y = -100
     for idx in range(robot_path.shape[0]):
         x,y = robot_path[idx,0], robot_path[idx,1]
-        if (np.linalg.norm(np.array([x-last_x,y-last_y])) >= 2* simulator.spheres_width) or (idx == robot_path.shape[0]-1):
+        if (np.linalg.norm(np.array([x-last_x,y-last_y])) >= 2* parameters.robot_length) or (idx == robot_path.shape[0]-1):
             plt.gca().add_patch(plt.Rectangle(
-                (robot_path[idx,0]-simulator.spheres_width/2,y-simulator.spheres_height/2), 
-                width=simulator.spheres_width,
-                height=simulator.spheres_height,
+                robot_path[idx,parameters.XY_POS] - parameters.robot_length/2,
+                width=parameters.robot_length,
+                height=parameters.robot_length,
                 angle=robot_path[idx,2],
                 ec='b',
                 fill=False)) 
@@ -48,7 +47,7 @@ def draw_path(robot_path, mission, crew):
         plt.gca().add_patch(
             plt.Circle(
                 wp,
-                radius=simulator.spheres_width*1.5,
+                radius=parameters.robot_length*1.5,
                 ec='m',fill=False, lw=3
             ))
 
@@ -56,5 +55,6 @@ def draw_path(robot_path, mission, crew):
     plt.ylim((0,parameters.module_size[1]))
     plt.tight_layout()
     # plt.show()
+
 
 

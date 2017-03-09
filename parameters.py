@@ -1,12 +1,42 @@
 import numpy as np
 import math
 
-module_size = (28*12*2.54E-2,14*12*2.54E-2)
+module_size = np.array([28*12*2.54E-2,14*12*2.54E-2])
 crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
 #Shoulder width given in inches and converted to meters; based on average of shoulder width for 95% male and 5% female,
 #which fall within height requirements for astronauts; average relationship between height and shoulder width
 #Average used because difference was 1-2 inches and there didn't seem to be a strong reason to select max or min
 #Assume profile to be a circle for simplicity
+
+robot_length = 12*2.54E-2
+robot_mass = 24.5
+robot_izz = robot_mass*2*(robot_length**2)/12
+
+robot_inertia_vec = np.array([robot_mass]*2 + [robot_izz])
+
+robot_x0 = 12*2.54E-2
+robot_y0 = 7*12*2.54E-2
+
+X_POS = 0
+Y_POS = 1
+THETA_POS = 2
+DX_POS = 3
+DY_POS = 4
+DTHETA_POS = 5
+
+XY_POS = [X_POS, Y_POS]
+POS_POS = [X_POS, Y_POS, THETA_POS]
+VEL_POS = [DX_POS, DY_POS, DTHETA_POS]
+
+
+
+robot_initial_condition = np.zeros((1,6))
+robot_initial_condition[0,X_POS] = robot_x0
+robot_initial_condition[0,Y_POS] = robot_y0
+robot_initial_condition[0,THETA_POS] = 0
+robot_initial_condition[0,DX_POS] = 0
+robot_initial_condition[0,DY_POS] = 0
+robot_initial_condition[0,DTHETA_POS] = 0
 
 def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on the mission ID
 #All mission coordinates are given in meters
@@ -32,7 +62,7 @@ def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on th
 	else:
 		print('Not a valid mission ID! (Valid codes: 1 = direct, 2 = waypoints, 3 = monitoring)')
 
-	return wp
+	return np.asarray(wp)
 
 def select_crew(crew_id): #Defines the location and orientation of crew 
 #All crew coordinates are given for the center of the profile in meters
@@ -62,13 +92,17 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 	else:
 		print('Not a valid crew ID! (Valid codes: 1 = one crew, 2 = opposing, 3 = cluster, 4 = random)')
 
-	return cp
+	return np.asarray(cp)
 
-def determine_constants(robot, cp)
+def determine_constants(robot, cp):
 	v = (robot.dx**2 + robot.dy**2)**(1/2) #Relative velocity between robot and human (stationary)
 	sigma_h = 2*v #From thesis appendix
 	sigma_s = (2/3)*sigma_h #From thesis appendix
 	sigma_r = (1/2)*sigma_h #From thesis appendix
+
+	rx = robot[-1,X_POS]
+	ry = robot[-1,Y_POS]
+
 	r = []
  #Determine where the robot is located in relation to front, side, or back of crew
 	for i in range(len(cp)):
@@ -76,7 +110,7 @@ def determine_constants(robot, cp)
 		y = cp[i][1]
 		theta = cp[i][2]
 
-		alpha = np.arctan2((robot.y-y),(robot.x-x))
+		alpha = np.arctan2((ry-y),(rx-x))
 		if alpha < 0:
 			alpha += 2*math.pi
 		
@@ -112,6 +146,9 @@ def proxemic_apf_function(robot, cp, r):
 	dfdy = 0
 	A = 1
 
+	rx = robot[-1,X_POS]
+	ry = robot[-1,Y_POS]
+
 	for i in range(len(cp)):
 		x = cp[i][0]  
 		y = cp[i][1]
@@ -119,8 +156,8 @@ def proxemic_apf_function(robot, cp, r):
 		b = r[i][1]
 		c = r[i][2]
 
-		dfdx += A*(2*a*(robot.x-x)+2*b*(robot.y-y))*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
-		dfdy += A*(2*b*(robot.x-x)+2*c*(robot.y-y))*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
+		dfdx += A*(2*a*(rx-x)+2*b*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
+		dfdy += A*(2*b*(rx-x)+2*c*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
 	
 	gradient = np.array([dfdx, dfdy, 0])
 	
@@ -129,6 +166,9 @@ def proxemic_apf_function(robot, cp, r):
 def proxemic_astar_function(robot, cp, r): #Mathematical function to define the potential field and cost 
 	cost = 0
 	A = 1
+
+	rx = robot[-1,X_POS]
+	ry = robot[-1,Y_POS]
 	
 	for i in range(len(cp)):
 		x = cp[i][0]  
@@ -137,7 +177,7 @@ def proxemic_astar_function(robot, cp, r): #Mathematical function to define the 
 		b = r[i][1]
 		c = r[i][2]
 
-		cost += A*np.exp(-(a*(robot.x-x)**2+2*b*(robot.x-x)*(robot.y-y)+c*(robot.y-y)**2))
+		cost += A*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
 	
 	return cost
 
@@ -147,9 +187,12 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 	sigma = (14/12)*0.3048 #Use crew shoulder width (meters); equal in x and y
 	A = 1
 
+	rx = robot[-1,X_POS]
+	ry = robot[-1,Y_POS]
+
 	for x,y,theta in cp: #Ask Ben about syntax, compare to proxemic
-		dfdx += (robot.x - x)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
-		dfdy += (robot.y - y)*(A/sigma**2)*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		dfdx += (rx - x)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
+		dfdy += (ry - y)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
 
 	gradient = np.array([dfdx, dfdy, 0])
 	
@@ -161,6 +204,6 @@ def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; 
 	A = 1
 
 	for x,y,theta in cp:
-		cost += A*np.exp(-((robot.x-x)**2+(robot.y-y)**2)/(2*sigma**2))
+		cost += A*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
 	
 	return cost

@@ -93,7 +93,7 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 		cp = crew4
 	else:
 		print('Not a valid crew ID! (Valid codes: 1 = one crew, 2 = opposing, 3 = cluster, 4 = random)')
-
+		return NULL 
 	return np.asarray(cp)
 
 def determine_constants(robot, cp):

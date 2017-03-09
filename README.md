@@ -22,6 +22,9 @@ where ``trial1path`` and ``trial2path`` are arrays of dimension (T,6). We could 
 
 
 ```python
+%load_ext autoreload
+%autoreload 2
+
 import apf, parameters, viz
 
 # robby gets stuck due to local minima
@@ -55,6 +58,13 @@ path = apf.apf_path_planner(
 	parameters.nonproxemic_apf_function)
 viz.draw_path(path,mission,crew)
 
+import numpy as np, matplotlib.pyplot as plt
+xx,yy = np.meshgrid(
+	np.linspace(0,parameters.module_width,3),
+	np.linspace(0,parameters.module_height,3)
+)
+
+grid = np.stack((xx,yy), axis=1)
 
 ```
 

@@ -1,7 +1,9 @@
 import numpy as np
 import math
 
-module_size = np.array([28*12*2.54E-2,14*12*2.54E-2])
+module_width = 28*12*2.54E-2
+module_height = 14*12*2.54E-2
+module_size = np.array([module_width,module_height])
 crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
 #Shoulder width given in inches and converted to meters; based on average of shoulder width for 95% male and 5% female,
 #which fall within height requirements for astronauts; average relationship between height and shoulder width
@@ -182,19 +184,27 @@ def proxemic_astar_function(robot, cp, r): #Mathematical function to define the 
 	return cost
 
 def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no proxemics; used for APF only
-	dfdx = 0
-	dfdy = 0
 	sigma = (14/12)*0.3048 #Use crew shoulder width (meters); equal in x and y
 	A = 1
 
-	rx = robot[-1,X_POS]
-	ry = robot[-1,Y_POS]
+	rx = robot[:,X_POS]
+	ry = robot[:,Y_POS]
+
+	# print('rx',rx,'ry',ry)
+
+	dfdx = np.zeros_like(rx)
+	dfdy = np.zeros_like(ry)
 
 	for x,y,theta in cp: #Ask Ben about syntax, compare to proxemic
+
 		dfdx += (rx - x)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
+		# if np.isnan(dfdx):
+		# 	return (rx,x,ry,y,dfdx)
 		dfdy += (ry - y)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
 
-	gradient = np.array([dfdx, dfdy, 0])
+	# print('dfdx',dfdy)	
+
+	gradient = np.stack((dfdx, dfdy, np.zeros_like(rx)),axis=1)
 	
 	return gradient
 

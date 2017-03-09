@@ -60,11 +60,27 @@ viz.draw_path(path,mission,crew)
 
 import numpy as np, matplotlib.pyplot as plt
 xx,yy = np.meshgrid(
-	np.linspace(0,parameters.module_width,3),
-	np.linspace(0,parameters.module_height,3)
+	np.linspace(0,parameters.module_width),
+	np.linspace(0,parameters.module_height)
 )
 
 grid = np.stack((xx,yy), axis=1)
+mission = parameters.select_mission(1)
+crew = parameters.select_crew(1)
+
+out = apf.linear_goal_force_function(grid,mission[0])
+out += apf.gaussian_boundary_force_function(grid, parameters.module_size)
+out += parameters.nonproxemic_apf_function(grid, crew)
+
+plt.figure()
+plt.quiver(xx,yy,out[:,0],out[:,1])
+plt.axis('scaled')
+viz.draw_crew(crew)
+viz.draw_waypoints(mission)
+
+plt.xlim((0,parameters.module_size[0]))
+plt.ylim((0,parameters.module_size[1]))
+plt.tight_layout()
 
 ```
 

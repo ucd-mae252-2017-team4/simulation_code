@@ -5,14 +5,8 @@ import numpy as np
 crew_color = 'k'
 plt.ion()
 
-# np array columns: x,y,theta
-def draw_path(robot_path, mission, crew):
-    plt.figure()
 
-    plt.plot(robot_path[:,0],robot_path[:,1])
-    plt.axis('scaled')
-
-
+def draw_crew(crew):
     for cx,cy,ct in crew: #crew x, crew y, crew theta
         plt.gca().add_patch(
             plt.Circle(
@@ -27,6 +21,23 @@ def draw_path(robot_path, mission, crew):
                 color=crew_color
             ))
 
+def draw_waypoints(mission):
+    for wp in mission:
+        plt.gca().add_patch(
+            plt.Circle(
+                wp,
+                radius=parameters.robot_length*1.5,
+                ec='m',fill=False, lw=3
+            ))
+
+# np array columns: x,y,theta
+def draw_path(robot_path, mission, crew):
+    plt.figure()
+    plt.plot(robot_path[:,0],robot_path[:,1])
+    plt.axis('scaled')
+
+    draw_crew(crew)
+
     last_x = -100
     last_y = -100
     for idx in range(robot_path.shape[0]):
@@ -40,16 +51,9 @@ def draw_path(robot_path, mission, crew):
                 ec='b',
                 fill=False)) 
             last_x = x
-            last_y = y    
+            last_y = y
 
-
-    for wp in mission:
-        plt.gca().add_patch(
-            plt.Circle(
-                wp,
-                radius=parameters.robot_length*1.5,
-                ec='m',fill=False, lw=3
-            ))
+    draw_waypoints(mission)
 
     plt.xlim((0,parameters.module_size[0]))
     plt.ylim((0,parameters.module_size[1]))

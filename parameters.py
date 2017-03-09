@@ -190,19 +190,12 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 	rx = robot[:,X_POS]
 	ry = robot[:,Y_POS]
 
-	# print('rx',rx,'ry',ry)
-
 	dfdx = np.zeros_like(rx)
 	dfdy = np.zeros_like(ry)
 
 	for x,y,theta in cp: #Ask Ben about syntax, compare to proxemic
-
 		dfdx += (rx - x)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
-		# if np.isnan(dfdx):
-		# 	return (rx,x,ry,y,dfdx)
 		dfdy += (ry - y)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
-
-	# print('dfdx',dfdy)	
 
 	gradient = np.stack((dfdx, dfdy, np.zeros_like(rx)),axis=1)
 	

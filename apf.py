@@ -55,24 +55,10 @@ def apf_path_planner(robot_initial_condition,goals,humans,
     for goal in goals:
         while True:
             force_vector = np.zeros((3,))
-            # print('froce',force_vector)
             force_vector = force_vector + goal_force_function(robot_path[[-1],:], goal)
-            # print('goal',force_vector)
             force_vector = force_vector + boundary_force_function(robot_path[[-1],:], module_size)
-            # print('boundary',force_vector)
-            # for human in humans:
-            #     force_vector += human_force_function(robot_path, human)
-            print('goal+boundary',force_vector)
-            res = human_force_function(robot_path[[-1],:], humans) 
-            # if isinstance(res,tuple):
-            #     return res
-            force_vector = force_vector + res
-            print('human',res)
-
-            # add some damping
+            force_vector = force_vector + human_force_function(robot_path[[-1],:], humans) 
             force_vector = force_vector - 20 * robot_path[[-1],parameters.VEL_POS]
-            print('dampingy',-20 * robot_path[[-1],parameters.VEL_POS])
-
 
             new_state = np.zeros((1,6))
 

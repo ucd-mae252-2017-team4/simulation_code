@@ -85,10 +85,36 @@ plt.xlim((0,parameters.module_size[0]))
 plt.ylim((0,parameters.module_size[1]))
 plt.tight_layout()
 
-# this is an example of getting a cost for a grid
-crew = parameters.select_crew(1)
+
+```
+# Grid computation
+below is an example for grid computations, which may be useful for A*
+
+
+```python
+import apf, parameters, viz
+import numpy as np, matplotlib.pyplot as plt
+
+# xx and yy are distributed throughout the module
+xx,yy = np.meshgrid(
+	np.linspace(0,parameters.module_width),
+	np.linspace(0,parameters.module_height)
+)
+
+# make place-holder grid for angles, velocities, etc
+zz = np.zeros_like(xx)
+
+# put the grids together
+grid = np.stack((xx,yy,zz,zz,zz,zz), axis=1)
+
+# select the crew pattern
+crew = parameters.select_crew(4)
+
+# compute the cost
 r = parameters.determine_constants(grid,crew)
 cost = parameters.proxemic_astar_function(grid, crew, r)
+
+# plot contours
 plt.figure()
 plt.contour(xx,yy,cost,20)
 plt.axis('scaled')
@@ -96,8 +122,11 @@ viz.draw_crew(crew)
 plt.xlim((0,parameters.module_size[0]))
 plt.ylim((0,parameters.module_size[1]))
 plt.tight_layout()
+```
 
+Below was demo code for debugging
 
+```python
 crew = np.hstack(
 	tuple(arr.reshape(-1,1) for arr in np.meshgrid(
 		*tuple(

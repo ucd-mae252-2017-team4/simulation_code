@@ -98,7 +98,7 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 
 def determine_constants(robot, cp):
 	v = (robot.dx**2 + robot.dy**2)**(1/2) #Relative velocity between robot and human (stationary)
-	sigma_h = 2*v #From thesis appendix
+	sigma_h = np.max(2*v, 0.5) #From thesis appendix
 	sigma_s = (2/3)*sigma_h #From thesis appendix
 	sigma_r = (1/2)*sigma_h #From thesis appendix
 
@@ -158,8 +158,8 @@ def proxemic_apf_function(robot, cp, r):
 		b = r[i][1]
 		c = r[i][2]
 
-		dfdx += A*(2*a*(rx-x)+2*b*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
-		dfdy += A*(2*b*(rx-x)+2*c*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
+		dfdx += -A*(2*a*(rx-x)+2*b*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
+		dfdy += -A*(2*b*(rx-x)+2*c*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
 	
 	gradient = np.array([dfdx, dfdy, 0])
 	
@@ -193,7 +193,7 @@ def nonproxemic_apf_function(robot, cp): #Use collision avoidance for humans; no
 	dfdx = np.zeros_like(rx)
 	dfdy = np.zeros_like(ry)
 
-	for x,y,theta in cp: #Ask Ben about syntax, compare to proxemic
+	for x,y,theta in cp: 
 		dfdx += (rx - x)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
 		dfdy += (ry - y)*(A/sigma**2)*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))
 

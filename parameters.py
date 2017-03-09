@@ -118,7 +118,16 @@ def determine_constants(robot, cp):
 		
 		s1 = theta + math.pi/2
 
-		if (theta <= math.pi/2) or (theta > (3/2)*math.pi):
+		if (theta <= math.pi/2):
+			s2 = s1 + math.pi
+			if s1 < alpha < s2:
+				sigma = sigma_r
+			elif (alpha == s1) or (alpha == s2):
+				sigma = sigma_s
+			else:
+				sigma = sigma_h
+		elif (theta > (3/2)*math.pi):
+			s1 = theta + math.pi/2 - 2*math.pi			
 			s2 = s1 + math.pi
 			if s1 < alpha < s2:
 				sigma = sigma_r

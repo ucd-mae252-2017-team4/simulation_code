@@ -26,6 +26,16 @@ where ``trial1path`` and ``trial2path`` are arrays of dimension (T,6). We could 
 %autoreload 2
 
 import apf, parameters, viz
+# make crew member a little bit below so APF doesn't get stuck
+mission = parameters.select_mission(1)
+crew = parameters.select_crew(1)
+crew[:,parameters.Y_POS] = 2.0
+path = apf.apf_path_planner(
+	parameters.robot_initial_condition,
+	mission,
+	crew,
+	parameters.nonproxemic_apf_function)
+viz.draw_path(path,mission,crew)
 
 # robby gets stuck due to local minima
 mission = parameters.select_mission(1)
@@ -37,16 +47,7 @@ path = apf.apf_path_planner(
 	parameters.nonproxemic_apf_function)
 viz.draw_path(path,mission,crew)
 
-# make crew member a little bit below so APF doesn't get stuck
-mission = parameters.select_mission(1)
-crew = parameters.select_crew(1)
-crew[:,parameters.Y_POS] = 2.0
-path = apf.apf_path_planner(
-	parameters.robot_initial_condition,
-	mission,
-	crew,
-	parameters.nonproxemic_apf_function)
-viz.draw_path(path,mission,crew)
+
 
 # Mission 3, crew 4  also gets stuck
 mission = parameters.select_mission(3)
@@ -64,7 +65,9 @@ xx,yy = np.meshgrid(
 	np.linspace(0,parameters.module_height)
 )
 
-grid = np.stack((xx,yy), axis=1)
+zz = np.zeros_like(xx)
+grid = np.stack((xx,yy,zz,zz,zz,zz), axis=1)
+
 mission = parameters.select_mission(1)
 crew = parameters.select_crew(1)
 
@@ -81,6 +84,40 @@ viz.draw_waypoints(mission)
 plt.xlim((0,parameters.module_size[0]))
 plt.ylim((0,parameters.module_size[1]))
 plt.tight_layout()
+
+# this is an example of getting a cost for a grid
+crew = parameters.select_crew(1)
+r = parameters.determine_constants(grid,crew)
+cost = parameters.proxemic_astar_function(grid, crew, r)
+plt.figure()
+plt.contour(xx,yy,cost,20)
+plt.axis('scaled')
+viz.draw_crew(crew)
+plt.xlim((0,parameters.module_size[0]))
+plt.ylim((0,parameters.module_size[1]))
+plt.tight_layout()
+
+
+crew = np.hstack(
+	tuple(arr.reshape(-1,1) for arr in np.meshgrid(
+		*tuple(
+			np.hsplit(
+				np.outer(np.array([[0.25,0.75]]),parameters.module_size),
+			2)
+		)
+	)) + (np.arange(4).reshape(-1,1)*np.pi/2,)
+)
+r = parameters.determine_constants(grid,crew)
+cost = parameters.proxemic_astar_function(grid,crew, r)
+plt.figure()
+plt.contour(xx,yy,cost,10)
+plt.axis('scaled')
+viz.draw_crew(crew)
+plt.xlim((0,parameters.module_size[0]))
+plt.ylim((0,parameters.module_size[1]))
+plt.tight_layout()
+
+
 
 ```
 

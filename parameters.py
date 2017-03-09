@@ -63,7 +63,7 @@ def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on th
 		wp = mission3
 	else:
 		print('Not a valid mission ID! (Valid codes: 1 = direct, 2 = waypoints, 3 = monitoring)')
-
+		return [(0,0)]
 	return np.asarray(wp)
 
 def select_crew(crew_id): #Defines the location and orientation of crew 

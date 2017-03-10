@@ -51,7 +51,7 @@ viz.draw_path(path,mission,crew)
 
 # Mission 3, crew 4  also gets stuck
 mission = parameters.select_mission(3)
-crew = parameters.select_crew(4)
+crew = parameters.select_crew(3)
 path = apf.apf_path_planner(
 	parameters.robot_initial_condition,
 	mission,
@@ -97,8 +97,8 @@ import numpy as np, matplotlib.pyplot as plt
 
 # xx and yy are distributed throughout the module
 xx,yy = np.meshgrid(
-	np.linspace(0,parameters.module_width),
-	np.linspace(0,parameters.module_height)
+	np.linspace(0,parameters.module_width,100),
+	np.linspace(0,parameters.module_height,100)
 )
 
 # make place-holder grid for angles, velocities, etc
@@ -147,6 +147,23 @@ plt.ylim((0,parameters.module_size[1]))
 plt.tight_layout()
 
 
+# debugging proxemic apf
+%load_ext autoreload
+%autoreload 2
+
+import apf, parameters, viz
+import numpy as np, matplotlib.pyplot as plt
+
+close_pos = np.array([[parameters.module_width*6/16,parameters.module_height/2,0,0,0,0]])
+mission = parameters.select_mission(1)
+crew = parameters.select_crew(1)
+crew[:,parameters.Y_POS] = 2.0
+path = apf.apf_path_planner(
+	parameters.robot_initial_condition,# close_pos,
+	mission,
+	crew,
+	parameters.proxemic_apf_function)
+viz.draw_path(path,mission,crew)
 
 ```
 

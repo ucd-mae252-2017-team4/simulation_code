@@ -77,9 +77,9 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 	for i in range(len(crew4)):
 		for j in range(i+1, len(crew4)):
 			d = ((crew4[j][0]-crew4[i][0])**2+(crew4[j][1]-crew4[i][1])**2)**(1/2) #Distance between crew centers
-			print(crew4[i])
-			print(crew4[j])
-			print(d)
+			# print(crew4[i])
+			# print(crew4[j])
+			# print(d)
 			if d <= crew_radius*2:
 				print("Crew members overlapping; generate new random positions")
 #Select the desired crew coordinates
@@ -102,7 +102,7 @@ def determine_constants(robot, cp):
 
 	v = (rvx**2 + rvy**2)**(1/2) #Relative velocity between robot and human (stationary)
 	sigma_h = 2*v.copy() #From thesis appendix
-	sigma_h[np.isclose(sigma_h,0)] = 0.5
+	sigma_h[sigma_h < 0.5] = 0.5
 	sigma_s = (2/3)*sigma_h #From thesis appendix
 	sigma_r = (1/2)*sigma_h #From thesis appendix
 
@@ -120,7 +120,7 @@ def determine_constants(robot, cp):
 		alpha = np.arctan2((ry-y),(rx-x))
 		alpha[alpha < 0 ] += 2*np.pi
 		
-		sigma = sigma_h.copy()
+		sigma = sigma_s.copy()
 
 		s1 = theta + np.pi/2
 
@@ -128,29 +128,35 @@ def determine_constants(robot, cp):
 			s2 = s1+np.pi
 			selector = np.all(((s1<alpha),(alpha<s2)),axis=0) 
 			sigma[selector] = sigma_r[selector]
-			selector = np.any(((s1==alpha),(alpha==s2)),axis=0)
-			sigma[selector] = sigma_s[selector]
+
 			selector = np.any(((s1>alpha),(alpha>s2)),axis=0)
 			sigma[selector] = sigma_h[selector]
-			
+
+			# selector = np.any((  np.isclose(s1,alpha),np.isclose(alpha,s2) ),axis=0)
+			# sigma[selector] = sigma_s[selector]
+
 		elif  (theta > 3*math.pi/2):
 			s1 = theta+np.pi/2 - 2*np.pi
 			s2 = s1 + np.pi
 			selector = np.all(((s1<alpha),(alpha<s2)),axis=0) 
 			sigma[selector] = sigma_r[selector]
-			selector = np.any(((s1==alpha),(alpha==s2)),axis=0)
-			sigma[selector] = sigma_s[selector]
+
 			selector = np.any(((s1>alpha),(alpha>s2)),axis=0)
 			sigma[selector] = sigma_h[selector]
+
+			# selector = np.any((  np.isclose(s1,alpha),np.isclose(alpha,s2) ),axis=0)
+			# sigma[selector] = sigma_s[selector]
 
 		else:
 			s2 = s1-np.pi
 			selector = np.all(((s2<alpha),(alpha<s1)),axis=0) 
 			sigma[selector] = sigma_h[selector]
-			selector = np.any(((s1==alpha),(alpha==s2)),axis=0)
-			sigma[selector] = sigma_s[selector]
+
 			selector = np.any(((s2>alpha),(alpha>s1)),axis=0)
 			sigma[selector] = sigma_r[selector]
+
+			# selector = np.any((  np.isclose(s1,alpha),np.isclose(alpha,s2) ),axis=0)
+			# sigma[selector] = sigma_s[selector]
 		
 		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
 		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
@@ -161,10 +167,11 @@ def determine_constants(robot, cp):
 
 	return r
 
-def proxemic_apf_function(robot, cp, r):
-	dfdx = 0
-	dfdy = 0
+def proxemic_apf_function(robot, cp):
+	
 	A = 1
+
+	r = determine_constants(robot,cp)
 
 	rx = robot[:,X_POS]
 	ry = robot[:,Y_POS]
@@ -179,10 +186,10 @@ def proxemic_apf_function(robot, cp, r):
 		b = r[i][1]
 		c = r[i][2]
 
-		dfdx += -A*(2*a*(rx-x)+2*b*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
-		dfdy += -A*(2*b*(rx-x)+2*c*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
+		dfdx += A*(2*a*(rx-x)+2*b*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
+		dfdy += A*(2*b*(rx-x)+2*c*(ry-y))*np.exp(-(a*(rx-x)**2+2*b*(rx-x)*(ry-y)+c*(ry-y)**2))
 	
-	gradient = np.array([dfdx, dfdy, 0])
+	gradient = np.stack((dfdx, dfdy, np.zeros_like(rx)),axis=1) #np.array([dfdx, dfdy, 0])
 	
 	return gradient
 

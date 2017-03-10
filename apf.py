@@ -7,8 +7,8 @@ def radial_force_function(human_positions, robot_position):
     return force_value
 
 def linear_goal_force_function(robot, goal):
-    k = 2**-2 #
-    max_factor = 2**4
+    k = 2**-3 #
+    max_factor = 2
 
     rx = robot[:,parameters.X_POS]
     ry = robot[:,parameters.Y_POS]
@@ -29,7 +29,7 @@ def constant_goal_force_function(robot, goal):
     pass
 
 def gaussian_boundary_force_function(robot, module_size):
-    A = 2**-1 #Figure out this value; magnitude of distribution
+    A = 2**-3 #Figure out this value; magnitude of distribution
     sigma = 6*2.54E-2 #Figure out this value; width of distribution; equal in x and y
 
     rx = robot[:,parameters.X_POS]
@@ -54,16 +54,21 @@ def apf_path_planner(robot_initial_condition,goals,humans,
 
     for goal in goals:
         while True:
-            force_vector = np.zeros((3,))
-            force_vector = force_vector + goal_force_function(robot_path[[-1],:], goal)
-            force_vector = force_vector + boundary_force_function(robot_path[[-1],:], module_size)
-            force_vector = force_vector + human_force_function(robot_path[[-1],:], humans) 
-            force_vector = force_vector - 20 * robot_path[[-1],parameters.VEL_POS]
+            force_vector = np.zeros((1,3))
+            # print(human_force_function)
+            force_vector += goal_force_function(robot_path[[-1],:], goal)
+            force_vector += boundary_force_function(robot_path[[-1],:], module_size)
+            force_vector += human_force_function(robot_path[[-1],:], humans) 
+            # force_vector /= 5
+            force_vector += -5*robot_path[[-1],parameters.VEL_POS]
+            force_vector/= 3
 
             new_state = np.zeros((1,6))
 
             new_state[0,parameters.VEL_POS] = (robot_path[-1,parameters.VEL_POS]
                 + force_vector/parameters.robot_inertia_vec )
+
+            new_state[0,parameters.VEL_POS] = force_vector/parameters.robot_inertia_vec
 
             new_state[0,parameters.POS_POS] = (robot_path[-1,parameters.POS_POS]
                 + new_state[0,parameters.VEL_POS] )

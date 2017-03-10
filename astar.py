@@ -48,8 +48,20 @@ vstep = 0.1
 def distance(start,end): #both (x,y) tuples
 	return np.sqrt((start[0]-end[0])^2+(start[1]-end[1])^2)
 
-def getCost(robot,vel):
+def getCost(myRobot,vel):
 	# 1) convert to robot form
+	#MYROBOT INPUT: myRobot = (newx,newy,vel,x,y,v)
+
+	#DESIRED ROBOT INPUT: robot_initial_condition = np.zeros((1,6))
+		# robot_initial_condition[0,X_POS] = robot_x0
+		# robot_initial_condition[0,Y_POS] = robot_y0
+		# robot_initial_condition[0,THETA_POS] = 0
+		# robot_initial_condition[0,DX_POS] = 0
+		# robot_initial_condition[0,DY_POS] = 0
+		# robot_initial_condition[0,DTHETA_POS] = 0
+	robot = np.zeros((1,6))
+	
+	
 	# 2) if useProxemics: 
 	#	 r = determine_constants(robot, cp)
 	#	 return proxemic_astar_function(robot,cp,r)
@@ -85,7 +97,7 @@ def getAdjacentNodes(currPath):
 				if !visitedNodes.has_key(newx,newy):
 					if insideBoundaries(newx,newy):
 						robot = (newx,newy,vel,x,y,v)### sort this!
-						dc = getCost(robot,vel) + distance(newx,newy,x,y)
+						dc = getCost(robot,vels) + distance(newx,newy,x,y)
 						nextStepList.append(dc,newx,newy,vel)
 	if len(nextStepList) == 0:
 		print("Oh no! You've got nowhere to go!")
@@ -134,6 +146,7 @@ def astar(mission,crew,proxemics):
 		goal_i += 1
 		fullPath.append(bestPath)
 
+	# list of nodes = (cost,visitedNodes,x,y,v)
 	return fullPath #warning this isn't the right format for viz
 		
 

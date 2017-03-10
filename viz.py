@@ -1,9 +1,16 @@
 import matplotlib as ml, matplotlib.pyplot as plt
-import parameters
+import parameters, astar
 import numpy as np
 
 crew_color = 'k'
 plt.ion()
+
+def path_to_trajectory(path):
+    trajectory = np.zeros((len(path),6))
+    for node_idx, node in enumerate(path):
+        trajectory[node_idx, parameters.XY_POS] = node[astar.X_I], node[astar.Y_I]
+        # add angles, velocities
+    return trajectory
 
 
 def draw_crew(crew):

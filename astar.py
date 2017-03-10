@@ -3,8 +3,7 @@
 ################
 import numpy as np
 import queue as q
-import simulator.py as simulator
-from parameters.py import *
+from parameters import *
 
 #NO ACTUAL WORLDMAP IN CODE - IS THIS A PROBLEM?#
 
@@ -52,13 +51,14 @@ def distance(start,end): #both (x,y) tuples
 def getCost(robot,vel):
 	# 1) convert to robot form
 	# 2) if useProxemics: 
-	   #	 r = determine_constants(robot, cp)
-	   #	 return proxemic_astar_function(robot,cp,r)
-	   # else: return nonproxemic_astar_function(robot,cp)
+	#	 r = determine_constants(robot, cp)
+	#	 return proxemic_astar_function(robot,cp,r)
+	# else: return nonproxemic_astar_function(robot,cp)
+	pass
 
 def insideBoundaries(x,y):
 	#This will eventually check that we haven't run into a wall
-	return TRUE
+	return True
 
 
 ''' we should change this function if we want to use theta; actually, that might make my life a little easier, 
@@ -67,7 +67,7 @@ we wanted to, I suppose, it'd just take some careful indexing '''
 '''takes in a node(position&velocity) and returns all of the next options (no revisiting a node in the same path)
 so no infinite loops'''
 def getAdjacentNodes(currPath):
-	nextStepList = ()
+	nextStepList = []
 	lastNode = currPath[-1]
 	c = lastNode[COST_I]
 	visitedNodes = lastNode[VISITED_I]
@@ -101,7 +101,8 @@ def astarPath(startpoint,goal,paths):
 
 	#Base case 2 (desired) - you've reached your goal
 	currPath = paths.get() #Take and remove from queue
-	if startpoint == goal: return currPath #Startpoint and goal should both be (x,y) tuples
+	if startpoint == goal:
+		return currPath #Startpoint and goal should both be (x,y) tuples
 
 	currCost = currPath[COST_I]
 	for node in getAdjacentNodes(currPath):
@@ -116,7 +117,6 @@ def astarPath(startpoint,goal,paths):
 #mission, crew are indices for configuration specified in parameters.py
 #proxemics should be a boolean TRUE/FALSE
 def astar(mission,crew,proxemics): 
-
 	cp = select_crew(crew)
 	waypoints = select_mission(mission)
 	#endpoint = waypoints[-1] #endpoint is last waypoint
@@ -128,11 +128,11 @@ def astar(mission,crew,proxemics):
 	paths.put(,(0,robot_x0,robot_y0,startVel))
 	useProxemics = proxemics 
 	fullPath = []
-		for goal in waypoints:
-			bestPath = astarPath(startpoint,goal,paths,crew_=cp,mission_=mission)
-			startpoint = waypoints[goal_i]
-			goal_i += 1
-			fullPath.append(bestPath)
+	for goal in waypoints:
+		bestPath = astarPath(startpoint,goal,paths,crew_=cp,mission_=mission)
+		startpoint = waypoints[goal_i]
+		goal_i += 1
+		fullPath.append(bestPath)
 
 	return fullPath #warning this isn't the right format for viz
 		

@@ -6,7 +6,7 @@ import queue as q
 import simulator.py as simulator
 from parameters.py import *
 
-#NO ACTUAL WORLDMAP IN CODE - IS THIS A PROBLEM?
+#NO ACTUAL WORLDMAP IN CODE - IS THIS A PROBLEM?#
 
 ''' 
 Starting with pseudocode, then expanding from there 
@@ -42,7 +42,8 @@ startVel = 0
 # these all need figuring out based on max thrust and step size
 dx = 0
 dy = 0
-dv = 0 #max that 
+dv = 0 #max that it can change based on physical robot properties
+#velocities that get changed are arange(v-dv:vstep:v+dv)
 vstep = 0.1
 
 def distance(start,end): #both (x,y) tuples

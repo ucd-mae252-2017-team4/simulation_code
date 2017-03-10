@@ -97,56 +97,65 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 	return np.asarray(cp)
 
 def determine_constants(robot, cp):
-	v = (robot.dx**2 + robot.dy**2)**(1/2) #Relative velocity between robot and human (stationary)
-	sigma_h = np.max(2*v, 0.5) #From thesis appendix
+	rvx = robot[:,DX_POS]
+	rvy = robot[:,DY_POS]
+
+	v = (rvx**2 + rvy**2)**(1/2) #Relative velocity between robot and human (stationary)
+	sigma_h = 2*v.copy() #From thesis appendix
+	sigma_h[np.isclose(sigma_h,0)] = 0.5
 	sigma_s = (2/3)*sigma_h #From thesis appendix
 	sigma_r = (1/2)*sigma_h #From thesis appendix
 
-	rx = robot[-1,X_POS]
-	ry = robot[-1,Y_POS]
+	rx = robot[:,X_POS]
+	ry = robot[:,Y_POS]
+
 
 	r = []
- #Determine where the robot is located in relation to front, side, or back of crew
+ 	#Determine where the robot is located in relation to front, side, or back of crew
 	for i in range(len(cp)):
 		x = cp[i][0]  
 		y = cp[i][1]
 		theta = cp[i][2]
 
 		alpha = np.arctan2((ry-y),(rx-x))
-		if alpha < 0:
-			alpha += 2*math.pi
+		alpha[alpha < 0 ] += 2*np.pi
 		
-		s1 = theta + math.pi/2
+		sigma = sigma_h.copy()
+
+		s1 = theta + np.pi/2
 
 		if (theta <= math.pi/2):
-			s2 = s1 + math.pi
-			if s1 < alpha < s2:
-				sigma = sigma_r
-			elif (alpha == s1) or (alpha == s2):
-				sigma = sigma_s
-			else:
-				sigma = sigma_h
-		elif (theta > (3/2)*math.pi):
-			s1 = theta + math.pi/2 - 2*math.pi			
-			s2 = s1 + math.pi
-			if s1 < alpha < s2:
-				sigma = sigma_r
-			elif (alpha == s1) or (alpha == s2):
-				sigma = sigma_s
-			else:
-				sigma = sigma_h
+			s2 = s1+np.pi
+			selector = np.all(((s1<alpha),(alpha<s2)),axis=0) 
+			sigma[selector] = sigma_r[selector]
+			selector = np.any(((s1==alpha),(alpha==s2)),axis=0)
+			sigma[selector] = sigma_s[selector]
+			selector = np.any(((s1>alpha),(alpha>s2)),axis=0)
+			sigma[selector] = sigma_h[selector]
+			
+		elif  (theta > 3*math.pi/2):
+			s1 = theta+np.pi/2 - 2*np.pi
+			s2 = s1 + np.pi
+			selector = np.all(((s1<alpha),(alpha<s2)),axis=0) 
+			sigma[selector] = sigma_r[selector]
+			selector = np.any(((s1==alpha),(alpha==s2)),axis=0)
+			sigma[selector] = sigma_s[selector]
+			selector = np.any(((s1>alpha),(alpha>s2)),axis=0)
+			sigma[selector] = sigma_h[selector]
+
 		else:
-			s2 = s1 - math.pi
-			if s2 < alpha < s1:
-				sigma = sigma_h		
-			elif (alpha == s1) or (alpha == s2):
-				sigma = sigma_s
-			else:
-				sigma = sigma_r
+			s2 = s1-np.pi
+			selector = np.all(((s2<alpha),(alpha<s1)),axis=0) 
+			sigma[selector] = sigma_h[selector]
+			selector = np.any(((s1==alpha),(alpha==s2)),axis=0)
+			sigma[selector] = sigma_s[selector]
+			selector = np.any(((s2>alpha),(alpha>s1)),axis=0)
+			sigma[selector] = sigma_r[selector]
 		
 		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
 		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
 		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)
+
 		ans = (a,b,c)
 		r.append(ans)
 
@@ -157,8 +166,11 @@ def proxemic_apf_function(robot, cp, r):
 	dfdy = 0
 	A = 1
 
-	rx = robot[-1,X_POS]
-	ry = robot[-1,Y_POS]
+	rx = robot[:,X_POS]
+	ry = robot[:,Y_POS]
+
+	dfdx = np.zeros_like(rx)
+	dfdy = np.zeros_like(ry)
 
 	for i in range(len(cp)):
 		x = cp[i][0]  
@@ -175,11 +187,11 @@ def proxemic_apf_function(robot, cp, r):
 	return gradient
 
 def proxemic_astar_function(robot, cp, r): #Mathematical function to define the potential field and cost 
-	cost = 0
 	A = 1
 
-	rx = robot[-1,X_POS]
-	ry = robot[-1,Y_POS]
+	rx = robot[:,X_POS]
+	ry = robot[:,Y_POS]
+	cost = np.zeros_like(rx)
 	
 	for i in range(len(cp)):
 		x = cp[i][0]  
@@ -214,6 +226,10 @@ def nonproxemic_astar_function(robot, cp): #Use collision avoidance for humans; 
 	cost = 0
 	sigma = (14/12)*0.3048 #Use crew shoulder width (meters); equal in x and y
 	A = 1
+
+	rx = robot[:,X_POS]
+	ry = robot[:,Y_POS]
+	cost = np.zeros_like(rx)
 
 	for x,y,theta in cp:
 		cost += A*np.exp(-((rx-x)**2+(ry-y)**2)/(2*sigma**2))

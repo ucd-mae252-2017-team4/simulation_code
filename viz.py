@@ -30,7 +30,7 @@ def draw_waypoints(mission):
                 ec='m',fill=False, lw=3
             ))
 
-# np array columns: x,y,theta
+# np array columns for robot_path: x,y,theta
 def draw_path(robot_path, mission, crew):
     plt.figure()
     plt.plot(robot_path[:,0],robot_path[:,1])

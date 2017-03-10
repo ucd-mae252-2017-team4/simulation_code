@@ -125,7 +125,7 @@ def astar(mission,crew,proxemics):
 	cost0 = distance(startpoint,goal0)
 	startpoint = (robot_x0,robot_y0)
 	paths = q.PriorityQueue()
-	paths.put(,(0,robot_x0,robot_y0,startVel))
+	paths.put(cost0,(0,robot_x0,robot_y0,startVel))
 	useProxemics = proxemics 
 	fullPath = []
 	for goal in waypoints:

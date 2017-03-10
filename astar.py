@@ -23,7 +23,6 @@ ROBOT_WIDTH = 12.*0.0254 #12" in meters
 ROBOT_MASS = 6. # kg
 
 MESH_SIZE = 100
-possibleVelocities = np.arange(0) ## decide this
 
 # each path gets added to the queue as (cost,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
 ## node indices ##
@@ -40,8 +39,9 @@ V_I = 4
 startVel = 0
 
 # these all need figuring out based on max thrust and step size
-dx = 0
-dy = 0
+GRID_SIZE = 10 #size of mesh
+dx = MODULE_WIDTH/GRID_SIZE
+dy = MODULE_LENGTH/GRID_SIZE
 dv = 0 #max that it can change based on physical robot properties
 #velocities that get changed are arange(v-dv:vstep:v+dv)
 vstep = 0.1

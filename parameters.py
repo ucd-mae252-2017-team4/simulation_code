@@ -1,6 +1,6 @@
 import numpy as np
 import math
-#testtesttest
+
 module_width = 28*12*2.54E-2
 module_height = 14*12*2.54E-2
 module_size = np.array([module_width,module_height])
@@ -16,7 +16,7 @@ robot_izz = robot_mass*2*(robot_length**2)/12
 
 robot_inertia_vec = np.array([robot_mass]*2 + [robot_izz])
 
-robot_x0 = 12*2.54E-2
+robot_x0 = 12*2.54E-2 #starting point?
 robot_y0 = 7*12*2.54E-2
 
 X_POS = 0
@@ -82,6 +82,7 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 			# print(d)
 			if d <= crew_radius*2:
 				print("Crew members overlapping; generate new random positions")
+				return NULL
 #Select the desired crew coordinates
 	if crew_id == 1:
 		cp = crew1
@@ -93,7 +94,7 @@ def select_crew(crew_id): #Defines the location and orientation of crew
 		cp = crew4
 	else:
 		print('Not a valid crew ID! (Valid codes: 1 = one crew, 2 = opposing, 3 = cluster, 4 = random)')
-
+		return NULL 
 	return np.asarray(cp)
 
 def determine_constants(robot, cp):

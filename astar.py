@@ -114,9 +114,10 @@ def astarPath(startpoint,goal,paths,crew,useProxemics):
 
 	#Base case 2 (desired) - you've reached your goal
 	currPath = paths.get()[1] #Take and remove from queue
+
 	#currPath is now a list of tuples, each tuple describes one node in the path
 
-	if np.allclose(startpoint,goal):
+	if np.linalg.norm(startpoint-goal) <= dy*5:
 		return currPath #Startpoint and goal should both be (x,y) tuples
 
 	currCost = currPath[-1][COST_I]
@@ -129,7 +130,7 @@ def astarPath(startpoint,goal,paths,crew,useProxemics):
 		currPath.append((newCost,newVisitedNodes,node[X_I],node[Y_I],node[V_I]))
 		paths.put((newCost,currPath))
 		newStartpoint = (node[X_I],node[Y_I]) #(x,y)
-		return astarPath(newStartpoint,goal,paths,crew,useProxemics)
+	return astarPath(newStartpoint,goal,paths,crew,useProxemics)
 
 #mission, crew are indices for configuration specified in parameters.py
 #proxemics should be a boolean TRUE/FALSE

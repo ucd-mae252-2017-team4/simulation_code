@@ -168,6 +168,78 @@ def determine_constants(robot, cp):
 
 	return r
 
+def determine_astar_constants(robot, cp):
+	# myRobot = np.array((newx,newy,vel,x,y,v))
+	# pythagorean thm
+
+	
+	v = robot[[0],2] #Relative velocity between robot and human (stationary)
+	sigma_h = 2*v.copy() #From thesis appendix
+	sigma_h[sigma_h < 0.5] = 0.5
+	sigma_s = (2/3)*sigma_h #From thesis appendix
+	sigma_r = (1/2)*sigma_h #From thesis appendix
+
+	rx = robot[[0],0]
+	ry = robot[[0],1]
+
+
+	r = []
+ 	#Determine where the robot is located in relation to front, side, or back of crew
+	for i in range(len(cp)):
+		x = cp[i][0]  
+		y = cp[i][1]
+		theta = cp[i][2]
+
+		alpha = np.arctan2((ry-y),(rx-x))
+		alpha[alpha < 0 ] += 2*np.pi
+		
+		sigma = sigma_s.copy()
+
+		s1 = theta + np.pi/2
+
+		if (theta <= math.pi/2):
+			s2 = s1+np.pi
+			selector = np.all(((s1<alpha),(alpha<s2)),axis=0) 
+			sigma[selector] = sigma_r[selector]
+
+			selector = np.any(((s1>alpha),(alpha>s2)),axis=0)
+			sigma[selector] = sigma_h[selector]
+
+			# selector = np.any((  np.isclose(s1,alpha),np.isclose(alpha,s2) ),axis=0)
+			# sigma[selector] = sigma_s[selector]
+
+		elif  (theta > 3*math.pi/2):
+			s1 = theta+np.pi/2 - 2*np.pi
+			s2 = s1 + np.pi
+			selector = np.all(((s1<alpha),(alpha<s2)),axis=0) 
+			sigma[selector] = sigma_r[selector]
+
+			selector = np.any(((s1>alpha),(alpha>s2)),axis=0)
+			sigma[selector] = sigma_h[selector]
+
+			# selector = np.any((  np.isclose(s1,alpha),np.isclose(alpha,s2) ),axis=0)
+			# sigma[selector] = sigma_s[selector]
+
+		else:
+			s2 = s1-np.pi
+			selector = np.all(((s2<alpha),(alpha<s1)),axis=0) 
+			sigma[selector] = sigma_h[selector]
+
+			selector = np.any(((s2>alpha),(alpha>s1)),axis=0)
+			sigma[selector] = sigma_r[selector]
+
+			# selector = np.any((  np.isclose(s1,alpha),np.isclose(alpha,s2) ),axis=0)
+			# sigma[selector] = sigma_s[selector]
+		
+		a = (np.cos(theta)**2)/(2*sigma**2)+(np.sin(theta)**2)/(2*sigma_s**2)
+		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
+		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)
+
+		ans = (a,b,c)
+		r.append(ans)
+
+	return r
+
 def proxemic_apf_function(robot, cp):
 	
 	A = 1

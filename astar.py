@@ -4,6 +4,7 @@
 import numpy as np
 import queue as q
 import parameters as p
+import viz as viz
 
 #NO ACTUAL WORLDMAP IN CODE - IS THIS A PROBLEM?#
 
@@ -17,13 +18,15 @@ Starting with pseudocode, then expanding from there
 #################
 ##  CONSTANTS  ##
 #################
-MODULE_WIDTH, MODULE_LENGTH = 4.3, 8.5 #meters; Destiny Module
-ROBOT_WIDTH = 12.*0.0254 #12" in meters
-ROBOT_MASS = 6. # kg
+MODULE_WIDTH, MODULE_LENGTH = p.module_width, p.module_height #meters; Destiny Module
+ROBOT_WIDTH = p.robot_length #12" in meters
+ROBOT_MASS = p.robot_mass
 
-# each path gets added to the queue as (cost,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
+# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
+# and priority is cost+distance
+
 ## node indices ##
-COST_I = 0
+COST_I = 0 # this is old cost plus new cost
 VISITED_I = 1
 X_I = 2
 Y_I = 3
@@ -31,9 +34,8 @@ V_I = 4
 
 
 
-'''initialize '''
-#velocities = np.arange(something)
-startVel = 0
+
+
 
 # these all need figuring out based on max thrust and step size
 GRID_SIZE = 10 #size of mesh
@@ -41,6 +43,7 @@ dx = MODULE_WIDTH/GRID_SIZE
 dy = MODULE_LENGTH/GRID_SIZE
 dv = 0.5 #max that it can change based on physical robot properties
 #velocities that get changed are arange(v-dv:vstep:v+dv)
+vmax = 5.0
 vstep = 0.1
 
 def distance(start,end): #both (x,y) tuples
@@ -51,25 +54,21 @@ def getCost(myRobot,crew,useProxemics):
 	#MYROBOT INPUT: myRobot = (newx,newy,vel,x,y,v)
 	myRobot = np.array(myRobot).reshape((1,-1))
 	r = p.determine_astar_constants(myRobot,crew)
-	#DESIRED ROBOT INPUT: robot_initial_condition = np.zeros((1,6))
-		# robot_initial_condition[0,X_POS] = robot_x0
-		# robot_initial_condition[0,Y_POS] = robot_y0
-		# robot_initial_condition[0,THETA_POS] = 0
-		# robot_initial_condition[0,DX_POS] = 0
-		# robot_initial_condition[0,DY_POS] = 0
-		# robot_initial_condition[0,DTHETA_POS] = 0
+
 	if useProxemics:
 		cost =  p.proxemic_astar_function(myRobot,crew,r)
 		return cost[0]
-	# 2) if useProxemics: 
-	#	 r = determine_constants(robot, cp)
-	#	 return proxemic_astar_function(robot,cp,r)
-	# else: return nonproxemic_astar_function(robot,cp)
-	#pass
+	else: 
+		cost = p.nonproxemic_astar_function(myRobot,crew)
+		return cost[0]
+
 
 def insideBoundaries(x,y):
-	#This will eventually check that we haven't run into a wall
-	return True
+	#This checks that we haven't run into a wall
+	if x <= MODULE_WIDTH - ROBOT_WIDTH/2:
+		if y <= MODULE_LENGTH - ROBOT_WIDTH/2:
+			return True
+	return False
 
 
 ''' we should change this function if we want to use theta; actually, that might make my life a little easier, 
@@ -86,7 +85,7 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 	x = lastNode[X_I]
 	y = lastNode[Y_I]
 	v = lastNode[V_I]
-	vels = np.arange(v-dv,v+dv,vstep) #possible velocities robot could physically change to in this timestep
+	vels = np.arange(max(v-dv,0),max(v+dv,vmax),vstep) #possible velocities robot could physically change to in this timestep
 	#if x,y aren't leading into a boundary
 	xs = [x-dx,x,x+dx]
 	ys = [y-dy,y,y+dy]
@@ -97,7 +96,7 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 				if (newx,newy) not in visitedNodes:
 					if insideBoundaries(newx,newy):
 						robot = (newx,newy,vel,x,y,v)### sort this!
-						dc = getCost(robot,crew,useProxemics) + distance((newx,newy),(x,y))
+						dc = getCost(robot,crew,useProxemics) 
 						nextStepList.append((dc,visitedNodes,newx,newy,vel))
 	if len(nextStepList) == 0:
 		print("Oh no! You've got nowhere to go!")
@@ -107,30 +106,35 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 ## recursively returns the lowest cost path, base case is when you're starting at the goal
 def astarPath(startpoint,goal,paths,crew,useProxemics):
 
-	#Base case 1 - ran out of paths despite not reaching end
-	if paths.empty():
-		print("You couldn't reach your goal, sorry! Not sure why.")
-		return NULL
+	while not paths.empty():
 
-	#Base case 2 (desired) - you've reached your goal
-	currPath = paths.get()[1] #Take and remove from queue
+		currPath = paths.get()[-1] #Take and remove from queue
+		#currPath is now a list of nodes
 
-	#currPath is now a list of tuples, each tuple describes one node in the path
+		if np.linalg.norm(startpoint-goal) <= dy*5:
+			break# return currPath #Startpoint and goal should both be (x,y) tuples
 
-	if np.linalg.norm(startpoint-goal) <= dy*5:
-		return currPath #Startpoint and goal should both be (x,y) tuples
+		currCost = currPath[-1][COST_I] #cost from last visited node
+		newPath = currPath.copy()
+		for node in getAdjacentNodes(currPath,crew,useProxemics):
+			#node is (dc,visitedNodes,newx,newy,vel)
 
-	currCost = currPath[-1][COST_I]
-	for node in getAdjacentNodes(currPath,crew,useProxemics):
-		newPath = currPath
-		newCost = currCost+node[COST_I]
-		newVisitedNodes = node[VISITED_I].copy()
-		newVisitedNodes.append((node[X_I],node[Y_I]))
-		#print(currPath)
-		currPath.append((newCost,newVisitedNodes,node[X_I],node[Y_I],node[V_I]))
-		paths.put((newCost,currPath))
-		newStartpoint = (node[X_I],node[Y_I]) #(x,y)
-	return astarPath(newStartpoint,goal,paths,crew,useProxemics)
+			newCost = currCost+node[COST_I]
+
+			#define priority
+			nX = node[X_I]
+			nY = node[Y_I]
+			priority = newCost + distance((nX,nY),goal)
+
+			#add current node to list of visited nodes
+			newVisitedNodes = node[VISITED_I].copy()
+			newVisitedNodes.append((nX,nY))
+
+			newPath.append((newCost,newVisitedNodes,nX,nY,node[V_I]))
+			paths.put((priority,newPath))
+			startpoint = (nX,nY) 
+		'''return astarPath(newStartpoint,goal,paths,crew,useProxemics)'''
+	return currPath
 
 #mission, crew are indices for configuration specified in parameters.py
 #proxemics should be a boolean TRUE/FALSE
@@ -142,11 +146,13 @@ def astar(mission,crew,proxemics):
 	goal0 = waypoints[0]
 	x0 = p.robot_x0
 	y0 = p.robot_y0
+	startVel = 0
 	startpoint = np.array((x0,y0))
 	visitedNodes = [(x0,y0)] #list of tuples
-	cost0 = distance(startpoint,goal0)
+	cost0 = 0
 	paths = q.PriorityQueue()
-	paths.put((cost0,[(cost0,visitedNodes,x0,y0,startVel)]))
+	# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
+	paths.put((0,[(cost0,visitedNodes,x0,y0,startVel)]))
 	#paths.get() should return list of tuples
 	useProxemics = proxemics 
 	fullPath = []
@@ -156,9 +162,17 @@ def astar(mission,crew,proxemics):
 		goal_i += 1
 		fullPath.append(bestPath)
 
-	# list of nodes = (cost,visitedNodes,x,y,v)
 	return fullPath #warning this isn't the right format for viz
 		
+
+def draw_astar(mission,crew,proxemics):
+	path = astar(mission,crew,proxemics)
+	cp = p.select_crew(crew)
+	waypoints = p.select_mission(mission)
+	drawablePath = viz.path_to_trajectory(path)
+
+	viz.draw_path(drawablePath,cp,waypoints)
+
 
 
 

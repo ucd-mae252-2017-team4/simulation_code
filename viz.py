@@ -8,8 +8,7 @@ plt.ion()
 def path_to_trajectory(path):
     trajectory = np.zeros((len(path),6))
     for node_idx, node in enumerate(path):
-        trajectory[node_idx, parameters.XY_POS] = node[astar.X_I], node[astar.Y_I]
-        
+        trajectory[node_idx, parameters.XY_POS] = node[-1][astar.X_I], node[-1][astar.Y_I]
         # add angles, velocities
     return trajectory
 

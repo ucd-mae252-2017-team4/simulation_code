@@ -21,6 +21,8 @@ robot_inertia_vec = np.array([robot_mass]*2 + [robot_izz])
 robot_x0 = 12*2.54E-2 #starting point?
 robot_y0 = 7*12*2.54E-2
 
+collision_distance = crew_radius+ np.sqrt(2)*robot_length/2
+
 X_POS = 0
 Y_POS = 1
 THETA_POS = 2

@@ -65,7 +65,7 @@ def apf_path_planner(robot_initial_condition,goals,humans,
             force_vector += goal_force_function(robot_path[[-1],:], goal)
             force_vector += boundary_force_function(robot_path[[-1],:], module_size)
             force_vector += human_force_function(robot_path[[-1],:], humans)
-            force_vector += -10*robot_path[[-1],parameters.VEL_POS]
+            force_vector += -5*robot_path[[-1],parameters.VEL_POS]
 
             force_norm = np.linalg.norm(force_vector[:,:-1])
             if force_norm > parameters.robot_max_thrust:

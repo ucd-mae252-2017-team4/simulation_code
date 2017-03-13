@@ -11,8 +11,10 @@ crew_radius = 0.3048*(14/12)/2 #Determines the space taken up by crew profile
 #Assume profile to be a circle for simplicity
 
 robot_length = 12*2.54E-2
-robot_mass = 24.5
+robot_mass = 6
 robot_izz = robot_mass*2*(robot_length**2)/12
+
+robot_max_thrust = 0.72
 
 robot_inertia_vec = np.array([robot_mass]*2 + [robot_izz])
 

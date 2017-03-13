@@ -138,7 +138,7 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 
 
 ## should return a data structure of the form single_path = [nodes]
-def astarPath(startpoint,goal,paths,crew,useProxemics):
+def astarPath(goal,paths,crew,useProxemics):
 
 	while not paths.empty():
 
@@ -202,10 +202,11 @@ def astar(mission,crew,proxemics):
 	for goal in waypoints:
 		if goal_i > 0: 
 			#start again at the last node from the last segment
-			node0 = bestPath[-1].copy()
+			lastNode = bestPath[-1].copy()
 			startpoint = waypoints[goal_i-1]
-			node0[VISITED_I] = [startpoint]
-		
+			visitedNodes = [startpoint]
+			lastVel = lastNode[V_I]
+			node0 = (0,visitedNodes,startpoint[0],startpoint[1],lastVel)		
 		
 		path0 = [node0] #should now be a list of nodes
 		# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
@@ -213,8 +214,8 @@ def astar(mission,crew,proxemics):
 		#paths.get() should return list of tuples
 		useProxemics = proxemics 
 
-		#astarPath(startpoint,goal,paths,crew,useProxemics)
-		bestPath = astarPath(startpoint,goal,paths,crew,useProxemics) 
+		#astarPath(goal,paths,crew,useProxemics)
+		bestPath = astarPath(goal,paths,crew,useProxemics) 
 		#bestPath should be a single_path = [nodes]
 		goal_i += 1
 		fullPath.extend(bestPath) 

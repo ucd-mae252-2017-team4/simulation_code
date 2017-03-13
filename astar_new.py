@@ -60,13 +60,13 @@ V_I = 4
 
 
 # these all need figuring out based on max thrust and step size
-GRID_SIZE = 20 #size of mesh
+GRID_SIZE = 100 #size of mesh
 dx = MODULE_WIDTH/GRID_SIZE
 dy = MODULE_LENGTH/GRID_SIZE
 #dv = 1 #max that it can change based on physical robot properties
 #velocities that get changed are arange(v-dv:vstep:v+dv)
 V_MAX = 5.0
-numVelocities = 3 #number of velocities to test
+numVelocities = 5 #number of velocities to test
 
 def distance(start,end): #both (x,y) tuples
 	return np.sqrt( (end[0]-start[0])**2 + (end[1]-start[1])**2 )
@@ -98,11 +98,13 @@ def getVels(v,dx,dy):
 	s = np.sqrt(dx**2 + dy**2)
 
 	vMax = min(V_MAX,np.sqrt(v**2 + 2*a*s)) 
-	vMin = max(0,np.sqrt(v**2 - 2*a*s))
+	vMin = 0
+	if v**2 > 2*a*s:
+		vMin = np.sqrt(v**2 - 2*a*s)
 
 	vRange = np.linspace(vMin,vMax,numVelocities)
 	if v not in vRange:
-		vI = np.floor(numVelocities/2)
+		vI = int(np.floor(numVelocities/2))
 		vRange = np.insert(vRange,vI,v)
 
 	return vRange
@@ -209,24 +211,27 @@ def astar(mission,crew,proxemics):
 	cost0 = 0
 	
 	node0 = (cost0,visitedNodes,x0,y0,v0)
-	paths = q.PriorityQueue()
 
 	goal_i = 0
 	fullPath = []
 
 	for goal in waypoints:
+		paths = q.PriorityQueue()
 		if goal_i > 0: 
+			#print ("goal index =", goal_i)
 			#start again at the last node from the last segment
 			lastNode = bestPath[-1]
-			print ("lastNode =", (lastNode[X_I],lastNode[Y_I]))
+			#print ("lastNode =", (lastNode[X_I],lastNode[Y_I]))
 			lastX = lastNode[X_I]
 			lastY = lastNode[Y_I]
-			newVisitedNodes = [(x0,y0),(lastX,lastY)]
+			newVisitedNodes = [(lastX,lastY)]
 			lastVel = lastNode[V_I]
 			node0 = (0,newVisitedNodes,lastX,lastY,lastVel)		
 		
 		path0 = [node0] #should now be a list of nodes
 		# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
+		# if not paths.empty():
+		# 	print("Path not empty!")
 		paths.put((0,path0))
 		#paths.get() should return list of tuples
 		useProxemics = proxemics 
@@ -246,6 +251,7 @@ def draw_astar(mission,crew,proxemics):
 	cp = p.select_crew(crew)
 	waypoints = p.select_mission(mission)
 	drawablePath = viz.path_to_trajectory(path)
+	print(drawablePath)
 
 	viz.draw_path(drawablePath,waypoints,cp)
 	toc = time.time()

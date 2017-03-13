@@ -47,12 +47,12 @@ def select_mission(mission_id): #Defines the waypoints (aka goal(s)) based on th
 #(x,y) where x is along the length of the module (28 ft) and y is across the width or diameter (14 ft)
 #(0,0) is located in the bottom left corner
 	mission1 = [(8.2296,2.1336)] #Mission 1 is a direct task from one end of the module to the other (27,7)
-	mission2 = [(2.1336,0.3048),(4.2672,0),(7.3152,0.3048),(8.2296,2.1336)] #Mission 2 is the waypoints (wp) alternating sides of the module; 
+	mission2 = [(2.1336,0.3048),(4.2672,3.9624),(7.3152,0.3048),(8.2296,2.1336)] #Mission 2 is the waypoints (wp) alternating sides of the module; 
 	#wp1 was choosen halfway to the center (7,1)
-	#wp2 is at the center top (14,0)
+	#wp2 is at the center top (14,13)
 	#wp3 is over halfway from the center to end (sharper turn) (24,1)
 	#wp4 is the same as mission1 (27,7)
-	mission3 = [(0.3048,0.3048),(8.2296,0.3048),(8.2296,3.9624),(0.3048,3.9624),(0,4.2672)] 
+	mission3 = [(0.3048,0.3048),(8.2296,0.3048),(8.2296,3.9624),(0.3048,3.9624),(0,2.1336)] 
 	#Mission 3 circulations through the module on a monitoring task and returns to the start point (1,1),(27,1),(27,13),(1,13),(0,14)
 #Select the desired mission coordinates
 	if mission_id == 1:

@@ -42,6 +42,7 @@ Starting with pseudocode, then expanding from there
 MODULE_WIDTH, MODULE_LENGTH = p.module_width, p.module_height #meters; Destiny Module
 ROBOT_WIDTH = p.robot_length #12" in meters
 ROBOT_MASS = p.robot_mass
+ROBOT_RADIUS = np.sqrt(0.5*(ROBOT_WIDTH**2))
 
 # each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
 # and priority is cost+distance
@@ -62,13 +63,13 @@ V_I = 4
 GRID_SIZE = 20 #size of mesh
 dx = MODULE_WIDTH/GRID_SIZE
 dy = MODULE_LENGTH/GRID_SIZE
-dv = 0.5 #max that it can change based on physical robot properties
+#dv = 1 #max that it can change based on physical robot properties
 #velocities that get changed are arange(v-dv:vstep:v+dv)
-vmax = 5.0
-vstep = 0.1
+V_MAX = 5.0
+numVelocities = 3 #number of velocities to test
 
 def distance(start,end): #both (x,y) tuples
-	return np.sqrt((start[0]-end[0])**2+(start[1]-end[1])**2)
+	return np.sqrt( (end[0]-start[0])**2 + (end[1]-start[1])**2 )
 
 def getCost(myRobot,crew,useProxemics):
 	
@@ -86,12 +87,25 @@ def getCost(myRobot,crew,useProxemics):
 
 def insideBoundaries(x,y):
 	#This checks that we haven't run into a wall
-	if ROBOT_WIDTH/2 < x < MODULE_WIDTH - ROBOT_WIDTH/2:
-		if ROBOT_WIDTH/2 < y < MODULE_LENGTH - ROBOT_WIDTH/2:
+	if ROBOT_RADIUS < x < MODULE_WIDTH - ROBOT_RADIUS:
+		if ROBOT_RADIUS < y < MODULE_LENGTH - ROBOT_RADIUS:
 			return True
 	return False
 
 
+def getVels(v,dx,dy):
+	a = p.robot_max_thrust/ROBOT_MASS
+	s = np.sqrt(dx**2 + dy**2)
+
+	vMax = min(V_MAX,np.sqrt(v**2 + 2*a*s)) 
+	vMin = max(0,np.sqrt(v**2 - 2*a*s))
+
+	vRange = np.linspace(vMin,vMax,numVelocities)
+	if v not in vRange:
+		vI = np.floor(numVelocities/2)
+		vRange = np.insert(vRange,vI,v)
+
+	return vRange
 
 
 
@@ -113,15 +127,16 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 	v = lastNode[V_I]
 
 	#define possible velocities robot could physically change to in this timestep
-	vels = np.arange(max(v-dv,0),max(v+dv,vmax),vstep) 
+	#vels = np.arange(max(v-dv,0),max(v+dv,vmax),vstep) 
 
 	# check that neighboring nodes are valid (inside the module, haven't already been visited in this path)
 	xs = [x-dx,x,x+dx]
 	ys = [y-dy,y,y+dy]
 
-	for vel in vels: 
-		for newx in xs:
-			for newy in ys:
+
+	for newx in xs:
+		for newy in ys:
+			for vel in getVels(v,newx-x,newy-y):
 				if (newx,newy) not in visitedNodes:
 					if insideBoundaries(newx,newy):
 						robot = (newx,newy,vel,x,y,v)
@@ -148,9 +163,9 @@ def astarPath(goal,paths,crew,useProxemics):
 		currY = currPath[-1][Y_I] # y value of last node in path
 		currPoint = (currX,currY) # location of current end of path
 
-		if np.linalg.norm(currPoint-goal) <= dy*1.5:
-			break# return currPath #Startpoint and goal should both be (x,y) tuples
-		elif np.linalg.norm(currPoint-goal) < ROBOT_WIDTH/2 + dy:
+		if np.linalg.norm(currPoint-goal) <= dy*1.2:
+			break# return currPath #currPoint and goal should both be (x,y) tuples
+		elif np.linalg.norm(currPoint-goal) < ROBOT_RADIUS + dy:
 			break
 
 		currCost = currPath[-1][COST_I] #cost from last visited node (costs stored in nodes are cumulative)
@@ -166,7 +181,7 @@ def astarPath(goal,paths,crew,useProxemics):
 			#define priority
 			nX = node[X_I]
 			nY = node[Y_I]
-			priority = newCost + distance((nX,nY),goal)/2
+			priority = newCost + distance((nX,nY),goal)
 
 			#add current node to list of visited nodes
 			newVisitedNodes = node[VISITED_I].copy() 
@@ -202,11 +217,13 @@ def astar(mission,crew,proxemics):
 	for goal in waypoints:
 		if goal_i > 0: 
 			#start again at the last node from the last segment
-			lastNode = bestPath[-1].copy()
-			startpoint = waypoints[goal_i-1]
-			visitedNodes = [startpoint]
+			lastNode = bestPath[-1]
+			print ("lastNode =", (lastNode[X_I],lastNode[Y_I]))
+			lastX = lastNode[X_I]
+			lastY = lastNode[Y_I]
+			newVisitedNodes = [(x0,y0),(lastX,lastY)]
 			lastVel = lastNode[V_I]
-			node0 = (0,visitedNodes,startpoint[0],startpoint[1],lastVel)		
+			node0 = (0,newVisitedNodes,lastX,lastY,lastVel)		
 		
 		path0 = [node0] #should now be a list of nodes
 		# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
@@ -215,7 +232,7 @@ def astar(mission,crew,proxemics):
 		useProxemics = proxemics 
 
 		#astarPath(goal,paths,crew,useProxemics)
-		bestPath = astarPath(goal,paths,crew,useProxemics) 
+		bestPath = astarPath(goal,paths,cp,useProxemics) 
 		#bestPath should be a single_path = [nodes]
 		goal_i += 1
 		fullPath.extend(bestPath) 
@@ -233,7 +250,12 @@ def draw_astar(mission,crew,proxemics):
 	viz.draw_path(drawablePath,waypoints,cp)
 	toc = time.time()
 
+	tElapsed = toc - tic
+	tmins = np.floor(tElapsed/60)
+	tsecs = np.mod(tElapsed,60)
+
 	print ("Took", toc - tic, "seconds")
+	print ("or", tmins, "mins and", tsecs, "seconds")
 
 
 

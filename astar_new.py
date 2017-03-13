@@ -59,7 +59,7 @@ V_I = 4
 
 
 # these all need figuring out based on max thrust and step size
-GRID_SIZE = 10 #size of mesh
+GRID_SIZE = 20 #size of mesh
 dx = MODULE_WIDTH/GRID_SIZE
 dy = MODULE_LENGTH/GRID_SIZE
 dv = 0.5 #max that it can change based on physical robot properties
@@ -86,8 +86,8 @@ def getCost(myRobot,crew,useProxemics):
 
 def insideBoundaries(x,y):
 	#This checks that we haven't run into a wall
-	if 0 < x < MODULE_WIDTH - ROBOT_WIDTH/2:
-		if 0 < y < MODULE_LENGTH - ROBOT_WIDTH/2:
+	if ROBOT_WIDTH/2 < x < MODULE_WIDTH - ROBOT_WIDTH/2:
+		if ROBOT_WIDTH/2 < y < MODULE_LENGTH - ROBOT_WIDTH/2:
 			return True
 	return False
 
@@ -150,6 +150,8 @@ def astarPath(startpoint,goal,paths,crew,useProxemics):
 
 		if np.linalg.norm(currPoint-goal) <= dy*1.5:
 			break# return currPath #Startpoint and goal should both be (x,y) tuples
+		elif np.linalg.norm(currPoint-goal) < ROBOT_WIDTH/2 + dy:
+			break
 
 		currCost = currPath[-1][COST_I] #cost from last visited node (costs stored in nodes are cumulative)
 		
@@ -164,7 +166,7 @@ def astarPath(startpoint,goal,paths,crew,useProxemics):
 			#define priority
 			nX = node[X_I]
 			nY = node[Y_I]
-			priority = newCost + distance((nX,nY),goal)
+			priority = newCost + distance((nX,nY),goal)/2
 
 			#add current node to list of visited nodes
 			newVisitedNodes = node[VISITED_I].copy() 
@@ -191,19 +193,28 @@ def astar(mission,crew,proxemics):
 	visitedNodes = [(x0,y0)] #list of tuples
 	cost0 = 0
 	
-	paths = q.PriorityQueue()
 	node0 = (cost0,visitedNodes,x0,y0,v0)
-	path0 = [node0] #should now be a list of nodes
-	# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
-	paths.put((0,path0))
-	#paths.get() should return list of tuples
-	useProxemics = proxemics 
-	fullPath = []
+	paths = q.PriorityQueue()
 
 	goal_i = 0
+	fullPath = []
+
 	for goal in waypoints:
-		startpoint = waypoints[goal_i]
-		bestPath = astarPath(startpoint,goal,paths,cp,useProxemics) 
+		if goal_i > 0: 
+			#start again at the last node from the last segment
+			node0 = bestPath[-1].copy()
+			startpoint = waypoints[goal_i-1]
+			node0[VISITED_I] = [startpoint]
+		
+		
+		path0 = [node0] #should now be a list of nodes
+		# each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
+		paths.put((0,path0))
+		#paths.get() should return list of tuples
+		useProxemics = proxemics 
+
+		#astarPath(startpoint,goal,paths,crew,useProxemics)
+		bestPath = astarPath(startpoint,goal,paths,crew,useProxemics) 
 		#bestPath should be a single_path = [nodes]
 		goal_i += 1
 		fullPath.extend(bestPath) 
@@ -221,7 +232,7 @@ def draw_astar(mission,crew,proxemics):
 	viz.draw_path(drawablePath,waypoints,cp)
 	toc = time.time()
 
-	print ("Took ", toc - tic, " seconds")
+	print ("Took", toc - tic, "seconds")
 
 
 

@@ -25,6 +25,7 @@ import numpy as np
 import queue as q
 import parameters as p
 import viz as viz
+import time
 
 #NO ACTUAL WORLDMAP IN CODE - IS THIS A PROBLEM?#
 
@@ -201,22 +202,26 @@ def astar(mission,crew,proxemics):
 
 	goal_i = 0
 	for goal in waypoints:
+		startpoint = waypoints[goal_i]
 		bestPath = astarPath(startpoint,goal,paths,cp,useProxemics) 
 		#bestPath should be a single_path = [nodes]
-		startpoint = waypoints[goal_i]
 		goal_i += 1
-		fullPath.append(bestPath) 
+		fullPath.extend(bestPath) 
 		#fullpath should be an array of single_paths
 	return fullPath
 		
 
 def draw_astar(mission,crew,proxemics):
+	tic = time.time()
 	path = astar(mission,crew,proxemics)
 	cp = p.select_crew(crew)
 	waypoints = p.select_mission(mission)
 	drawablePath = viz.path_to_trajectory(path)
 
 	viz.draw_path(drawablePath,waypoints,cp)
+	toc = time.time()
+
+	print ("Took ", toc - tic, " seconds")
 
 
 

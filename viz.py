@@ -11,6 +11,8 @@ def path_to_trajectory(path):
     trajectory = np.zeros((len(path),6))
     for node_idx, node in enumerate(path):
         trajectory[node_idx, parameters.XY_POS] = node[astar.X_I], node[astar.Y_I]
+        v = node[astar.V_I]
+        
     return trajectory
 
 

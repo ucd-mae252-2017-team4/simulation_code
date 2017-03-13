@@ -162,7 +162,8 @@ def astar(mission,crew,proxemics):
 		goal_i += 1
 		fullPath.append(bestPath)
 
-	return fullPath #warning this isn't the right format for viz
+
+	return fullPath[-1] #warning this isn't the right format for viz
 		
 
 def draw_astar(mission,crew,proxemics):
@@ -171,7 +172,7 @@ def draw_astar(mission,crew,proxemics):
 	waypoints = p.select_mission(mission)
 	drawablePath = viz.path_to_trajectory(path)
 
-	viz.draw_path(drawablePath,cp,waypoints)
+	viz.draw_path(drawablePath,waypoints,cp)
 
 
 

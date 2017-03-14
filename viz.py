@@ -8,11 +8,28 @@ plt.ion()
 
 def path_to_trajectory(path):
 
-    trajectory = np.zeros((len(path),6))
+    trajectory = np.zeros((len(path),7))
     for node_idx, node in enumerate(path):
         trajectory[node_idx, parameters.XY_POS] = node[astar.X_I], node[astar.Y_I]
         v = node[astar.V_I]
-        
+
+        #get change in distance
+        prev_node = path[node_idx-1]
+        dx = node[astar.X_I] - prev_node[astar.X_I]
+        dy = node[astar.Y_I] - prev_node[astar.Y_I]
+
+        if dx == 0:
+            trajectory[node_idx, parameters.VEL_POS] = 0, v, 0
+        elif dy == 0:
+            trajectory[node_idx, parameters.VEL_POS] = v, 0, 0
+        else:
+            trajectory[node_idx, parameters.VEL_POS] = v/np.sqrt(2), v/np.sqrt(2), 0
+
+        ds = np.sqrt(dx**2 + dy**2)
+        trajectory[node_idx, 6] = ds/v
+
+
+
     return trajectory
 
 

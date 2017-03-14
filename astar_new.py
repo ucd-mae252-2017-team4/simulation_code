@@ -119,11 +119,21 @@ def noCollisons(x,y,crew):
 	return True
 
 
-def getVels(v,dx,dy):
+def getVels(v,newx,newy,x,y,goal):
+
+	deltaX = newx-x
+	deltaY = newy-y
+
 	a = p.robot_max_thrust/ROBOT_MASS
-	s = np.sqrt(dx**2 + dy**2)
+	s = np.sqrt(deltaX**2 + deltaY**2)
 
 	vMax = min(V_MAX,np.sqrt(v**2 + 2*a*s)) 
+	waypointBuffer = V_MAX**2 / (2*a)
+	distanceFromGoal = distance((newx,newy),goal)
+	if distanceFromGoal <= waypointBuffer:
+		vMaxDecel = np.sqrt(2*a*distanceFromGoal)
+		vMax = min(vMax,vMaxDecel)
+
 	vMin = 0
 	if v**2 > 2*a*s:
 		vMin = np.sqrt(v**2 - 2*a*s)
@@ -143,7 +153,7 @@ Takes in a path in the form of a list of nodes, identifies the last
 one as the end of the path,  and spits back a list of the neighboring 
 nodes with uncumulative costs
 (dc,visitedNodes,newx,newy,vel) '''
-def getAdjacentNodes(currPath,crew,useProxemics):
+def getAdjacentNodes(currPath,crew,useProxemics,goal):
 	#takes in a list of nodes and spits back a list of nodes with uncumulative costs
 	#returned nodes are (dc,visitedNodes,newx,newy,vel)
 	nextStepList = []
@@ -168,7 +178,7 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 		for newy in ys:
 			if (newx,newy) not in visitedNodes:
 				if noCollisons(newx,newy,crew):
-					possibleVels = getVels(v,newx-x,newy-y)
+					possibleVels = getVels(v,newx,newy,x,y,goal)
 					for vel in possibleVels:
 						robot = (newx,newy,vel,x,y,v)
 						dc = getCost(robot,crew,useProxemics) 
@@ -207,7 +217,7 @@ def astarPath(goal,paths,crew,useProxemics):
 
 		currCost = currPath[-1][COST_I] #cost from last visited node (costs stored in nodes are cumulative)
 		
-		for node in getAdjacentNodes(currPath,crew,useProxemics):
+		for node in getAdjacentNodes(currPath,crew,useProxemics,goal):
 			#that means it takes in a list of nodes and spits back a list of nodes with uncumulative costs
 			#node is (dc,visitedNodes,newx,newy,vel)
 

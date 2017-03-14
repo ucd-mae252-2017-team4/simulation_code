@@ -237,7 +237,8 @@ def determine_astar_constants(robot, cp):
 		b = (np.sin(2*theta))/(4*sigma**2)-(np.sin(2*theta))/(4*sigma_s**2)
 		c =(np.sin(theta)**2)/(2*sigma**2)+(np.cos(theta)**2)/(2*sigma_s**2)
 
-		ans = (a,b,c)
+		ans = (a,b,c,sigma)
+
 		r.append(ans)
 
 	return r

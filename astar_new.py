@@ -43,6 +43,8 @@ MODULE_WIDTH, MODULE_LENGTH = p.module_width, p.module_height #meters; Destiny M
 ROBOT_WIDTH = p.robot_length #12" in meters
 ROBOT_MASS = p.robot_mass
 ROBOT_RADIUS = np.sqrt(0.5*(ROBOT_WIDTH**2))
+a = 1 #distance weight
+b = 0.05 #weight of 1/velocity
 
 # each path gets added to the queue as (priority,[nodes]), where nodes are (cost,visitedNodes,x,y,v)
 # and priority is cost+distance
@@ -60,12 +62,13 @@ V_I = 4
 
 
 # these all need figuring out based on max thrust and step size
-GRID_SIZE = 100 #size of mesh
-dx = MODULE_WIDTH/GRID_SIZE
+GRID_SIZE = 50 #size of mesh
+
 dy = MODULE_LENGTH/GRID_SIZE
+dx = dy
 #dv = 1 #max that it can change based on physical robot properties
 #velocities that get changed are arange(v-dv:vstep:v+dv)
-V_MAX = 5.0
+V_MAX = 0.5
 numVelocities = 5 #number of velocities to test
 
 def distance(start,end): #both (x,y) tuples
@@ -76,6 +79,20 @@ def getCost(myRobot,crew,useProxemics):
 	#MYROBOT INPUT: myRobot = (newx,newy,vel,x,y,v)
 	myRobot = np.array(myRobot).reshape((1,-1))
 	r = p.determine_astar_constants(myRobot,crew)
+
+	robotPos = (myRobot[0][0],myRobot[0][1])
+	#
+	'''outOfRange = False
+	for i in range(len(crew)):
+		crewCenter = (crew[i][0],crew[i][1])
+		sigma = r[i][3]#3=sigma
+		if distance(robotPos,crewCenter) > 3*sigma:
+			outOfRange = True
+		else: 
+			outOfRange = False
+		
+	if outOfRange:
+		return 0'''
 
 	if useProxemics:
 		cost =  p.proxemic_astar_function(myRobot,crew,r)
@@ -91,6 +108,15 @@ def insideBoundaries(x,y):
 		if ROBOT_RADIUS < y < MODULE_LENGTH - ROBOT_RADIUS:
 			return True
 	return False
+
+def noCollisons(x,y,crew):
+	if not insideBoundaries(x,y):
+		return False
+	for i in range(len(crew)):
+		crewCenter = (crew[i][0],crew[i][1])
+		if distance((x,y),crewCenter) < ROBOT_RADIUS + p.crew_radius:
+			return False
+	return True
 
 
 def getVels(v,dx,dy):
@@ -113,7 +139,9 @@ def getVels(v,dx,dy):
 
 '''
 Called by astarPath()
-takes in a list of nodes and spits back a list of nodes with uncumulative costs
+Takes in a path in the form of a list of nodes, identifies the last
+one as the end of the path,  and spits back a list of the neighboring 
+nodes with uncumulative costs
 (dc,visitedNodes,newx,newy,vel) '''
 def getAdjacentNodes(currPath,crew,useProxemics):
 	#takes in a list of nodes and spits back a list of nodes with uncumulative costs
@@ -138,12 +166,19 @@ def getAdjacentNodes(currPath,crew,useProxemics):
 
 	for newx in xs:
 		for newy in ys:
-			for vel in getVels(v,newx-x,newy-y):
-				if (newx,newy) not in visitedNodes:
-					if insideBoundaries(newx,newy):
+			if (newx,newy) not in visitedNodes:
+				if noCollisons(newx,newy,crew):
+					possibleVels = getVels(v,newx-x,newy-y)
+					for vel in possibleVels:
 						robot = (newx,newy,vel,x,y,v)
 						dc = getCost(robot,crew,useProxemics) 
-						nextStepList.append((dc,visitedNodes,newx,newy,vel))
+						## if outside 3*sigma for all possible crew members:
+						'''if dc == 0:
+							vel = max(possibleVels)
+							nextStepList.append((dc,visitedNodes,newx,newy,vel))
+							break'''
+						if vel > 0:
+							nextStepList.append((dc,visitedNodes,newx,newy,vel))
 	if len(nextStepList) == 0:
 		print("Oh no! You've got nowhere to go!")
 	
@@ -183,7 +218,8 @@ def astarPath(goal,paths,crew,useProxemics):
 			#define priority
 			nX = node[X_I]
 			nY = node[Y_I]
-			priority = newCost + distance((nX,nY),goal)
+			nV = node[V_I]
+			priority = newCost + a*distance((nX,nY),goal) + b/nV
 
 			#add current node to list of visited nodes
 			newVisitedNodes = node[VISITED_I].copy() 
@@ -251,7 +287,7 @@ def draw_astar(mission,crew,proxemics):
 	cp = p.select_crew(crew)
 	waypoints = p.select_mission(mission)
 	drawablePath = viz.path_to_trajectory(path)
-	print(drawablePath)
+	#print(drawablePath)
 
 	viz.draw_path(drawablePath,waypoints,cp)
 	toc = time.time()

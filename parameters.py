@@ -14,6 +14,8 @@ robot_length = 12*2.54E-2
 robot_mass = 6
 robot_izz = robot_mass*2*(robot_length**2)/12
 
+goal_cutoff = 1.5
+
 robot_max_thrust = 0.72
 
 robot_inertia_vec = np.array([robot_mass]*2 + [robot_izz])

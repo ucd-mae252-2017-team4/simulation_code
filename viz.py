@@ -36,7 +36,7 @@ def draw_waypoints(mission):
         plt.gca().add_patch(
             plt.Circle(
                 wp,
-                radius=parameters.robot_length*1.5,
+                radius=parameters.robot_length*parameters.goal_cutoff,
                 ec='m',fill=False, lw=3
             ))
 

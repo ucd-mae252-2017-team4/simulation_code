@@ -75,11 +75,13 @@ zz = np.zeros_like(xx)
 grid = np.stack((xx,yy,zz,zz,zz,zz), axis=1)
 
 # select the crew pattern
-crew = parameters.select_crew(4)
+crew = np.array([[parameters.module_width/4, parameters.module_height/2, np.pi/2],
+    [3*parameters.module_width/4, parameters.module_height/2, np.pi/2]])
 
 # compute the cost
-r = parameters.determine_constants(grid,crew)
-cost = parameters.proxemic_astar_function(grid, crew, r)
+r = parameters.determine_constants(grid,crew[[0]])
+cost = parameters.proxemic_astar_function(grid, crew[[0]], r)
+cost += parameters.nonproxemic_astar_function(grid, crew)
 
 # plot contours
 plt.figure()
@@ -89,6 +91,15 @@ viz.draw_crew(crew)
 plt.xlim((0,parameters.module_size[0]))
 plt.ylim((0,parameters.module_size[1]))
 plt.tight_layout()
+
+# check that peak is 1
+parameters.nonproxemic_astar_function(np.zeros((1,6)),np.zeros((1,3)))
+
+r = parameters.determine_constants(np.array([(0.5,0,0,0,0,0)]),np.zeros((1,3)))
+parameters.proxemic_astar_function(np.array([(0.5,0,0,0,0,0)]),np.zeros((1,3)),r)
+
+
+
 ```
 
 Put a crew member in each quadrant facing in the cardinal directions, plot the cost contour
@@ -115,3 +126,24 @@ plt.tight_layout()
 
 ```
 
+
+getting percent diff stuff
+
+```python
+import pandas as pd 
+df = pd.DataFrame.from_csv('summary_2017_03_13__17_55_50.csv')
+index_cols = ['mission','crew','type']
+df.sort_values(index_cols)
+
+prox = df.iloc[::2].copy().reset_index()
+nonp = df.iloc[1::2].copy().reset_index()
+
+pct_diff = (prox[prox.columns.difference(index_cols)] - nonp[nonp.columns.difference(index_cols)])/nonp
+pct_diff[['mission','crew']] = prox[['mission','crew']]
+
+df[df.columns not in index_cols]
+df[df.columns.difference(index_cols)].pct_change()
+
+
+
+```

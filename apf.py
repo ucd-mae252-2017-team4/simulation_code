@@ -10,9 +10,9 @@ def proxemic_force_function(human_position, robot_position):
 def radial_force_function(human_positions, robot_position):
     return force_value
 
-def linear_goal_force_function(robot, goal):
-    k = 2**-3 # 2**-3 worked until I made the integration better
-    max_factor = 2
+def linear_goal_force_function(robot, goal, k=2**-3):
+    # k = 2**-3 # 2**-3 worked until I made the integration better
+    max_f = 2*parameters.robot_length*parameters.goal_cutoff*k
 
     rx = robot[:,parameters.X_POS]
     ry = robot[:,parameters.Y_POS]
@@ -20,8 +20,8 @@ def linear_goal_force_function(robot, goal):
     gx = goal[parameters.X_POS]
     gy = goal[parameters.Y_POS]
 
-    fx = np.clip(k*(gx - rx), -max_factor*k, max_factor*k)
-    fy = np.clip(k*(gy - ry), -max_factor*k, max_factor*k)
+    fx = np.clip(k*(gx - rx), -max_f, max_f)
+    fy = np.clip(k*(gy - ry), -max_f, max_f)
 
     # print('fx',fx)
     # print('fy',fy)
@@ -49,7 +49,7 @@ def gaussian_boundary_force_function(robot, module_size):
     return np.stack([dfdx, dfdy, np.zeros_like(dfdx)],axis=1)
 
 def apf_path_planner(robot_initial_condition,goals,humans,
-  human_force_function,
+  human_force_function, goal_k=2**-3, damping_b=5,
   module_size=parameters.module_size,
   boundary_force_function=gaussian_boundary_force_function,
   goal_force_function=linear_goal_force_function):
@@ -62,10 +62,10 @@ def apf_path_planner(robot_initial_condition,goals,humans,
         while True:
             force_vector = np.zeros((1,3))
             # print(human_force_function)
-            force_vector += goal_force_function(robot_path[[-1],:], goal)
+            force_vector += goal_force_function(robot_path[[-1],:], goal, goal_k)
             force_vector += boundary_force_function(robot_path[[-1],:], module_size)
             force_vector += human_force_function(robot_path[[-1],:], humans)
-            force_vector += -5*robot_path[[-1],parameters.VEL_POS]
+            force_vector += -damping_b*robot_path[[-1],parameters.VEL_POS]
 
             force_norm = np.linalg.norm(force_vector[:,:-1])
             if force_norm > parameters.robot_max_thrust:
@@ -94,8 +94,11 @@ def apf_path_planner(robot_initial_condition,goals,humans,
                 print("NAN")
                 break
 
-            if np.any(np.abs(robot_path[[-2],parameters.XY_POS]) > 2*parameters.module_size):
+            if np.any(((robot_path[[-2],parameters.XY_POS] > 1.5*parameters.module_size),(robot_path[[-2],parameters.XY_POS] < -0.5*parameters.module_size) )):
                 print("OUT OF BOUNDS")
+                break
+
+            if robot_path.shape[0]*dt > 10E3:
                 break
 
 

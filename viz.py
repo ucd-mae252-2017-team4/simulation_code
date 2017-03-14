@@ -26,7 +26,10 @@ def path_to_trajectory(path):
             trajectory[node_idx, parameters.VEL_POS] = v/np.sqrt(2), v/np.sqrt(2), 0
 
         ds = np.sqrt(dx**2 + dy**2)
-        trajectory[node_idx, 6] = ds/v
+        if np.isclose(ds,0) or np.isclose(v,0):
+            trajectory[node_idx, 6] = trajectory[node_idx-1, 6]
+        else:
+            trajectory[node_idx, 6] = trajectory[node_idx-1, 6] + ds/v
 
 
 
@@ -62,7 +65,7 @@ def draw_path(robot_path, mission, crew):
     plt.figure()
     plt.plot(robot_path[:,0],robot_path[:,1])
     plt.axis('scaled')
-
+    
     draw_crew(crew)
 
     last_x = -100

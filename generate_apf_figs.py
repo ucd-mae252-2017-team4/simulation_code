@@ -105,7 +105,7 @@ def do_generate():
                 
                 plt.xlabel('t, sec')
                 plt.ylabel('distance, m')
-                plt.title('Distance Between Robot and Crew\n for Mission %d, Crew Configuration %d APF - %s' % (crew_idx, mission_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
+                plt.title('Distance Between Robot and Crew\n for Mission %d, Crew Configuration %d, APF - %s' % (crew_idx, mission_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
                 # plt.gcf().set_size_inches(3.5,3)
                 plt.tight_layout()
                 plt.savefig('data/crew_distance__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))

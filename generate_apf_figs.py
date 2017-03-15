@@ -18,8 +18,8 @@ grid = np.stack((xx,yy,zz,zz,zz,zz), axis=1)
 funcs = {'proxemic': parameters.proxemic_apf_function,
  'nonproxemic': parameters.nonproxemic_apf_function }
 
-n_mission = 1#3
-n_crew = 1#4
+n_mission = 3
+n_crew = 4
 
 idx = 0
 path_columns = ['x','y','theta','vx','vy','vtheta', 'fx','fy', 'tth']
@@ -27,16 +27,19 @@ path_columns = ['x','y','theta','vx','vy','vtheta', 'fx','fy', 'tth']
 use_k = 1.0
 use_b = 5.0
 
+dists_to_bin = [0, 0.15, 0.45, 1.20, 3.60]
+
 def do_generate():
-    df_columns = ['type','mission','crew','time','max vel', 'average vel', 'distance', 'max accel', 'boundary collisions', 'crew collisions', 'min crew distance', '%% complete']
+    df_columns = ['type','mission','crew','time','max vel', 'average vel', 'distance', 'max accel', 'boundary collisions', 'crew collisions', 'min crew distance', '%% complete'] + \
+        ['time in distance bin %d from crew %d' % (dist_idx, crewnum+1) for crewnum in range(4) for dist_idx in range(len(dists_to_bin[1:]))]
     idx = 0
     df = pd.DataFrame(columns=df_columns,)
     for mission_idx in range(1,n_mission+1): #4
-        mission_idx = 2
+        # mission_idx = 1
         mission = parameters.select_mission(mission_idx)
 
         for crew_idx in range(1,n_crew+1): #5
-            crew_idx = 2
+            # crew_idx = 1
             if (crew_idx == 5):
                 if (mission_idx==1):
                     crew = parameters.select_crew(1)
@@ -53,26 +56,38 @@ def do_generate():
                     crew,
                     funcs[func_name],
                     goal_k = use_k, damping_b=use_b)
-                # viz.draw_path(path,mission,crew)
+                viz.draw_path(path,mission,crew)
+                plt.xlabel('x, m')
+                plt.ylabel('y, m')
+                plt.title('Robot Path on Mission %d with Crew %d, APF - %s' % (mission_idx, crew_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
+                # plt.gcf().set_size_inches(3.5,3)
+                plt.tight_layout()
+                plt.savefig('data/path_mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
+                plt.close()
 
                 path_df = pd.DataFrame(data=path, columns=path_columns)
                 path_df.index = path_df.index*apf.dt
 
-                # plt.savefig('data/path_mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
-                plt.close()
-
                 path_df['vn'] = (path_df['vx']**2 + path_df['vy']**2)**0.5
                 path_df['an'] = (path_df['fx']**2 + path_df['fy']**2)**0.5/parameters.robot_mass
 
-                # path_df[['vn','fn']].plot()
+                # path_df[['vn','an']].plot()
                 # plt.tight_layout()
-                # # plt.savefig('data/velocity_force__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
+                # plt.savefig('data/velocity_force__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
                 # plt.close()
 
                 count_crew_collisions = 0 
                 for crewnum,crewmember in enumerate(crew):
-                    path_df['distance from crew %d' % crewnum] = ((path_df['x']-crewmember[0])**2 + (path_df['y']-crewmember[1])**2)**0.5
-                    count_crew_collisions += ((path_df['distance from crew %d' % crewnum] <= parameters.collision_distance).astype(int).diff()>0).sum()
+                    path_df['distance from crew %d' % (crewnum+1)] = ((path_df['x']-crewmember[0])**2 + (path_df['y']-crewmember[1])**2)**0.5
+
+                    for dist_idx,dist in enumerate(dists_to_bin[1:]):
+
+                        path_df['time in distance bin %d from crew %d' % (dist_idx, crewnum+1)] = np.diff(path_df.index[((path_df['distance from crew %d' % (crewnum+1)] >= dists_to_bin[dist_idx]) & \
+                            (path_df['distance from crew %d' % (crewnum+1)] < dist)).astype(int).diff().abs().astype(bool)])[1::2].sum()
+
+
+
+                    count_crew_collisions += ((path_df['distance from crew %d' % (crewnum+1)] <= parameters.collision_distance).astype(int).diff()>0).sum()
 
                 count_complete_wp = 0
                 for wp in mission:
@@ -81,12 +96,17 @@ def do_generate():
 
                 percent_complete_wp = count_complete_wp/mission.shape[0]
 
-                plt.figure()
                 path_df[path_df.columns[path_df.columns.str.startswith('distance from crew ')]].plot()
+                # plt.legend(bbox_to_anchor=(0, -0.02, 1, -0.002),legends=['crew 1'])
 
-                for line_y in [0.15, 0.45, 1.20, 3.60]:
+                for line_y in dists_to_bin:
                     plt.plot(path_df.index[[0,-1]],[line_y]*2,'--')
 
+                
+                plt.xlabel('t, sec')
+                plt.ylabel('distance, m')
+                plt.title('Distance Between Robot and Crew\n for Mission %d, Crew Configuration %d APF - %s' % (crew_idx, mission_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
+                # plt.gcf().set_size_inches(3.5,3)
                 plt.tight_layout()
                 plt.savefig('data/crew_distance__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
                 plt.close()
@@ -105,7 +125,7 @@ def do_generate():
                 # entered waypoint zone %
                 # max thrust, max velocity
 
-                df.loc[idx] = [
+                row_data = [
                         func_name, # proxemic or not
                         mission_idx,
                         crew_idx,
@@ -118,21 +138,40 @@ def do_generate():
                         count_crew_collisions, # crew colissions
                         path_df[path_df.columns[path_df.columns.str.startswith('distance from crew ')]].min().min(), # min crew distance
                         percent_complete_wp
-                    ]
+                    ] + [ 
+                        np.diff(
+                            path_df.index[
+                                (
+                                    (path_df['distance from crew %d' % (crewnum+1)] >= dists_to_bin[dist_idx]) & (path_df['distance from crew %d' % (crewnum+1)] < dist)
+                                ).astype(int).diff().abs().astype(bool)
+                            ]
+                        )[1::2].sum() for crewnum,crewmember in enumerate(crew) for dist_idx,dist in enumerate(dists_to_bin[1:])
+                    ] + [0] * (4 - crew.shape[0])*(len(dists_to_bin)-1)
+                df.loc[idx] = row_data
 
+                
                 idx += 1
+
                 # out = apf.linear_goal_force_function(grid,mission[0])
                 # out += apf.gaussian_boundary_force_function(grid, parameters.module_size)
                 # out += funcs[func_name](grid, crew)
 
+                # norm = (out[:,0]**2 + out[:,1]**2)**0.5
+                # norm = norm/norm.max().max()
+
                 # plt.figure()
-                # plt.quiver(xx,yy,out[:,0],out[:,1])
+                # plt.quiver(xx,yy,out[:,0],out[:,1],norm)
                 # plt.axis('scaled')
                 # # viz.draw_crew(crew)
                 # viz.draw_waypoints(mission[[0]])
 
                 # plt.xlim((0,parameters.module_size[0]))
                 # plt.ylim((0,parameters.module_size[1]))
+
+                # plt.xlabel('x, m')
+                # plt.ylabel('y, m')
+                # plt.title('Potential Field for Goal %d Mission %d with Crew %d APF - %s' % (mission_idx, crew_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
+
                 # plt.tight_layout()
                 # plt.savefig('data/quiver_mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
                 # plt.close()
@@ -237,7 +276,7 @@ def compare_damp_amp():
     return df
 
 def color_quiver_plt():
-    for mission_idx,crew_idx,wp_idx in [(2,2,1),(2,3,1),(3,4,3)]:
+    for mission_idx,crew_idx,wp_idx in [(2,2,1),(2,2,2),(2,3,1),(3,4,3)]:
         mission = parameters.select_mission(mission_idx)
         crew = parameters.select_crew(crew_idx)
         for func_name in funcs:
@@ -248,9 +287,10 @@ def color_quiver_plt():
             norm = (out[:,0]**2 + out[:,1]**2)**0.5
             norm = norm/norm.max().max()
 
-            plt.figure(figsize=(60,40))
+            plt.figure()
             plt.quiver(xx,yy,out[:,0],out[:,1],norm,cmap=plt.cm.viridis)
-            plt.colorbar()
+            # plt.colorbar()
+            plt.colorbar(fraction=0.046, pad=0.04)
             # norm = Normalize()
             # norm.autoscale()
             plt.axis('scaled')
@@ -259,11 +299,17 @@ def color_quiver_plt():
 
             plt.xlim((0,parameters.module_size[0]))
             plt.ylim((0,parameters.module_size[1]))
+
+            plt.xlabel('x, m')
+            plt.ylabel('y, m')
+            plt.title('Potential Field for Goal %d Mission %d with Crew %d - %s' % ((wp_idx+1), mission_idx, crew_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
+            # plt.gcf().set_size_inches(3.5,3)
             plt.tight_layout()
-            plt.savefig('data/quiver_mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
+            plt.savefig('data/quiver_goal%d_mission%d_crew%d_%s.png' % ((wp_idx+1),mission_idx,crew_idx,func_name))
             plt.close()
 
 
 if __name__ == '__main__':
     df = do_generate()
-    df.to_csv( datetime.now().__format__('summary_%Y_%m_%d__%H_%M_%S.csv'))
+    color_quiver_plt()
+    df.to_csv( datetime.now().__format__('data/apf_summary_%Y_%m_%d__%H_%M_%S.csv'))

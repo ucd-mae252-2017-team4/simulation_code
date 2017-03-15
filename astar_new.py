@@ -57,7 +57,8 @@ Y_I = 3
 V_I = 4
 
 
-
+STEP_TIMEOUT = 0.25
+TOTAL_TIMEOUT = 60
 
 
 
@@ -200,8 +201,8 @@ def getAdjacentNodes(currPath,crew,useProxemics,goal):
 
 
 ## should return a data structure of the form single_path = [nodes]
-def astarPath(goal,paths,crew,useProxemics):
-
+def astarPath(goal,paths,crew,useProxemics,total_time_tic,max_time=0):
+	tic = time.time()
 	while not paths.empty():
 
 		currPath = paths.get()[-1] #Take and remove from queue
@@ -238,8 +239,15 @@ def astarPath(goal,paths,crew,useProxemics):
 			#add node to path, add path to q with defined priority
 			newPath.append((newCost,newVisitedNodes,nX,nY,node[V_I]))
 			paths.put((priority,newPath))
-		
-	return currPath
+			toc = time.time()
+			if toc - tic >= max_time:
+				max_time = toc - tic
+			if (toc - total_time_tic > TOTAL_TIMEOUT) or (max_time > STEP_TIMEOUT):
+				# print('breaking on ')
+				return currPath, max_time, True
+			tic = toc
+
+	return currPath, max_time, False
 
 
 
@@ -259,7 +267,10 @@ def astar(mission,crew,proxemics):
 	node0 = (cost0,visitedNodes,x0,y0,v0)
 
 	goal_i = 0
+	max_time = 0
 	fullPath = []
+
+	start_time = time.time()
 
 	for goal in waypoints:
 		paths = q.PriorityQueue()
@@ -283,12 +294,17 @@ def astar(mission,crew,proxemics):
 		useProxemics = proxemics 
 
 		#astarPath(goal,paths,crew,useProxemics)
-		bestPath = astarPath(goal,paths,cp,useProxemics) 
+		bestPath, poss_max_time, timed_out = astarPath(goal,paths,cp,useProxemics, start_time, max_time)
+		if poss_max_time > max_time:
+			max_time = poss_max_time
+
 		#bestPath should be a single_path = [nodes]
 		goal_i += 1
 		fullPath.extend(bestPath) 
+		if timed_out:
+			break
 		#fullpath should be an array of single_paths
-	return fullPath
+	return fullPath, max_time
 		
 
 def draw_astar(mission,crew,proxemics):

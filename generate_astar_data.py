@@ -63,8 +63,8 @@ def astar_generate(args):
 
     count_crew_collisions = 0 
     for crewnum,crewmember in enumerate(crew):
-        path_df['distance from crew %d' % crewnum] = ((path_df['x']-crewmember[0])**2 + (path_df['y']-crewmember[1])**2)**0.5
-        count_crew_collisions += ((path_df['distance from crew %d' % crewnum] <= parameters.collision_distance).astype(int).diff()>0).sum()
+        path_df['distance from crew %d' % (crewnum+1)] = ((path_df['x']-crewmember[0])**2 + (path_df['y']-crewmember[1])**2)**0.5
+        count_crew_collisions += ((path_df['distance from crew %d' % (crewnum+1)] <= parameters.collision_distance).astype(int).diff()>0).sum()
 
     count_complete_wp = 0
     for wp in mission:
@@ -146,10 +146,10 @@ def astar_generate(args):
 
 if __name__ == '__main__':
     df = pd.DataFrame(columns=df_columns,)
-    missions_to_iter = [1]#,2,3]
-    crew_to_iter = [1]#,2,3,4]
+    missions_to_iter = [1,2,3]
+    crew_to_iter = [1,2,3,4]
 
-    args = itertools.product(missions_to_iter,crew_to_iter,[True, False])
+    args = itertools.product(missions_to_iter,crew_to_iter,[True,False])
     with Pool(4) as p:
         # paths = [ p.apply(astar_generate, arg) for arg in args ]
         results = p.map(astar_generate, args)

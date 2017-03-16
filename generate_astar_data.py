@@ -22,7 +22,7 @@ funcs = {'proxemic': parameters.proxemic_apf_function,
 n_mission = 1#3
 n_crew = 1#4
 
-dists_to_bin = [0, 0.15, 0.45, 1.20, 3.60]
+dists_to_bin = [0, 0.15, 0.45, 1.20, 3.60, 100]
 
 idx = 0
 astar_path_columns = ['x','y','theta','vx','vy','vtheta']
@@ -75,7 +75,7 @@ def astar_generate(args):
 
     path_df[path_df.columns[path_df.columns.str.startswith('distance from crew ')]].plot()
 
-    for line_y in dists_to_bin:
+    for line_y in dists_to_bin[1:-1]:
         plt.plot(path_df.index[[0,-1]],[line_y]*2,'--')
 
     plt.xlabel('t, sec')
@@ -115,15 +115,24 @@ def astar_generate(args):
             percent_complete_wp,
             toc-tic, # time to compute
             max_node_time,
-        ] + [ 
-            np.diff(
-                path_df.index[
-                    (
-                        (path_df['distance from crew %d' % (crewnum+1)] >= dists_to_bin[dist_idx]) & (path_df['distance from crew %d' % (crewnum+1)] < dist)
-                    ).astype(int).diff().abs().astype(bool)
-                ]
-            )[1::2].sum() for crewnum,crewmember in enumerate(crew) for dist_idx,dist in enumerate(dists_to_bin[1:])
-        ] + [0] * (4 - crew.shape[0])*(len(dists_to_bin)-1)
+        ]
+
+    for crewnum,crewmember in enumerate(crew):
+        check_time = 0
+        for dist_idx,dist in enumerate(dists_to_bin[1:]):
+            in_bin_selector = (
+                    (path_df['distance from crew %d' % (crewnum+1)] >= dists_to_bin[dist_idx]) & \
+                    (path_df['distance from crew %d' % (crewnum+1)] < dist)
+                ).astype(int).diff().abs().astype(bool)
+            for end_pt in [0,-1]:
+                in_bin_selector.iloc[end_pt] = ((path_df['distance from crew %d' % (crewnum+1)].iloc[end_pt] >= dists_to_bin[dist_idx]) and
+                        (path_df['distance from crew %d' % (crewnum+1)].iloc[end_pt] < dist))
+            df += [np.diff(path_df.index[in_bin_selector])[::2].sum()]
+            check_time += df[-1]
+
+        print("check",path_df.index[-1],check_time, "good" if path_df.index[-1] == check_time else "ERROR! ERROR! ERROR!")
+    
+    df += [0] * (4 - crew.shape[0])*(len(dists_to_bin)-1)
     path_df.to_csv('data/%d.csv' % idx)
 
     # out = apf.linear_goal_force_function(grid,mission[0])
@@ -156,4 +165,4 @@ if __name__ == '__main__':
 
     for idx, result in enumerate(results):
         df.loc[idx] = result[0]
-    df.to_csv( datetime.now().__format__('summary_%Y_%m_%d__%H_%M_%S.csv'))
+    df.to_csv( datetime.now().__format__('data/astar_summary_%Y_%m_%d__%H_%M_%S.csv'))

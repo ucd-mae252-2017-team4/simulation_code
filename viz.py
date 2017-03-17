@@ -36,8 +36,8 @@ def path_to_trajectory(path):
     return trajectory
 
 
-def draw_crew(crew):
-    for cx,cy,ct in crew: #crew x, crew y, crew theta
+def draw_crew(crew, labels=False):
+    for cidx,(cx,cy,ct) in enumerate(crew): #crew x, crew y, crew theta
         plt.gca().add_patch(
             plt.Circle(
                 (cx,cy),
@@ -50,55 +50,118 @@ def draw_crew(crew):
                 (cy,cy+np.sin(ct)*parameters.crew_radius),
                 color=crew_color
             ))
+        if labels:
+            plt.text(
+                cx-2*parameters.crew_radius, 
+                cy+ 1.25*parameters.crew_radius,
+                'Crew %d' % (cidx+1), multialignment='center'
+            )
 
-def draw_waypoints(mission):
-    for wp in mission:
+def draw_waypoints(mission, labels=False):
+    for wi,wp in enumerate(mission):
         plt.gca().add_patch(
             plt.Circle(
                 wp,
                 radius=parameters.robot_length*parameters.goal_cutoff,
                 ec='m',fill=False, lw=3
             ))
+        if labels:
+            plt.text(
+                wp[0]-0.0625, 
+                wp[1]-0.0625,
+                '%d' % (wi+1), multialignment='center'
+            )
 
 velocity_bins = [2**-3, 2**-2, 2**-1]
 vel_color = 'ryg'
 
+path_colors = {'proxemic':'b','non-proxemic':'g'}
 # np array columns for robot_path: x,y,theta
-def draw_path(robot_path, mission, crew, with_vel = False):
+def draw_path(robot_paths, mission, crew, with_vel = False, key=['proxemic','non-proxemic']):
     plt.figure()
-    plt.plot(robot_path[:,0],robot_path[:,1])
+    if not isinstance(robot_paths,list):
+        robot_paths = [robot_paths]
+
+    for path_idx,robot_path in enumerate(robot_paths):
+        plt.plot(robot_path[:,0],robot_path[:,1],label=key[path_idx])
+
+        last_x = -100
+        last_y = -100
+        for idx in range(robot_path.shape[0]):
+            x,y = robot_path[idx,0], robot_path[idx,1]
+            if (np.linalg.norm(np.array([x-last_x,y-last_y])) >= 2* parameters.robot_length) or (idx == robot_path.shape[0]-1):
+                plt.gca().add_patch(plt.Rectangle(
+                    robot_path[idx,parameters.XY_POS] - parameters.robot_length/2,
+                    width=parameters.robot_length,
+                    height=parameters.robot_length,
+                    angle=robot_path[idx,2],
+                    ec=path_colors[key[path_idx]],
+                    fill=False)) 
+                last_x = x
+                last_y = y
     
 
-    if with_vel:
-        robot_v_norm = (robot_path[:,3]**2+robot_path[:,4]**2)**0.5
-        for vidx,vel in enumerate(velocity_bins):
-            selector = (robot_v_norm >= vel)
-            plt.scatter(robot_path[selector,0],robot_path[selector,1], color=vel_color[vidx])
+        if with_vel:
+            robot_v_norm = (robot_path[:,3]**2+robot_path[:,4]**2)**0.5
+            for vidx,vel in enumerate(velocity_bins):
+                selector = (robot_v_norm >= vel)
+                plt.scatter(robot_path[selector,0],robot_path[selector,1], color=vel_color[vidx])
 
     plt.axis('scaled')
     draw_crew(crew)
-
-    last_x = -100
-    last_y = -100
-    for idx in range(robot_path.shape[0]):
-        x,y = robot_path[idx,0], robot_path[idx,1]
-        if (np.linalg.norm(np.array([x-last_x,y-last_y])) >= 2* parameters.robot_length) or (idx == robot_path.shape[0]-1):
-            plt.gca().add_patch(plt.Rectangle(
-                robot_path[idx,parameters.XY_POS] - parameters.robot_length/2,
-                width=parameters.robot_length,
-                height=parameters.robot_length,
-                angle=robot_path[idx,2],
-                ec='b',
-                fill=False)) 
-            last_x = x
-            last_y = y
-
     draw_waypoints(mission)
 
     plt.xlim((0,parameters.module_size[0]))
     plt.ylim((0,parameters.module_size[1]))
     plt.tight_layout()
     # plt.show()
+
+if __name__ == '__main__':
+    for crew_idx in range(1,5):
+        crew = parameters.select_crew(crew_idx)
+        plt.figure()
+        plt.axis('scaled')
+        plt.gca().add_patch(plt.Rectangle(
+            parameters.robot_initial_condition[0,parameters.XY_POS] - parameters.robot_length/2,
+            width=parameters.robot_length,
+            height=parameters.robot_length,
+            angle=0,
+            ec='b',
+            fill=False)) 
+        draw_crew(crew, True)
+        plt.xlim((0,parameters.module_size[0]))
+        plt.ylim((0,parameters.module_size[1]))
+
+        plt.xlabel('x, m')
+        plt.ylabel('y, m')
+        plt.title('Crew Positions for Crew Configuration %d' % crew_idx)
+        plt.tight_layout()
+        plt.savefig('crew%d' % crew_idx,bbox_inches='tight')
+        plt.close()
+
+    for mission_idx in range(1,4):
+        mission = parameters.select_mission(mission_idx)
+        plt.figure()
+        plt.axis('scaled')
+        plt.gca().add_patch(plt.Rectangle(
+            parameters.robot_initial_condition[0,parameters.XY_POS] - parameters.robot_length/2,
+            width=parameters.robot_length,
+            height=parameters.robot_length,
+            angle=0,
+            ec='b',
+            fill=False)) 
+        draw_waypoints(mission, True)
+        plt.xlim((0,parameters.module_size[0]))
+        plt.ylim((0,parameters.module_size[1]))
+
+        plt.xlabel('x, m')
+        plt.ylabel('y, m')
+        plt.title('Waypoint Positions for Mission %d' % mission_idx)
+        plt.tight_layout()
+        plt.savefig('mission%d' % mission_idx,bbox_inches='tight')
+        plt.close()
+
+
 
 
 

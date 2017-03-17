@@ -192,21 +192,36 @@ def do_generate(do_path=True, do_distance=True, do_speed=False, do_paired_veloci
                 # plt.savefig('data/quiver_mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
                 # plt.close()
 
+            colors = 'bg'
             if do_paired_velocity:
                 new_df = pd.DataFrame()
-                new_df['proxemic v'] = paths_df_list[0]['vn']
-                new_df['nonproxemic v'] = paths_df_list[1]['vn']
+                new_df['proxemic'] = paths_df_list[0]['vn']
+                new_df['non-proxemic'] = paths_df_list[1]['vn']
+
+                plt.figure()
+                plt.plot(new_df['proxemic'], 'b')
+                plt.plot(new_df['non-proxemic'], 'g')
 
                 new_df['proxemic goals'] = 0
                 new_df['nonproxemic goals'] = 0
                 for wp in mission:
                     for func_idx,func_name in enumerate(func_names_list):
                         path_df = paths_df_list[func_idx]
-                        new_df[func_name + ' goals'] += ((((path_df['x']-wp[0])**2 + (path_df['y']-wp[1])**2)**0.5) <= parameters.goal_cutoff*parameters.robot_length).astype(float)*0.05
-                new_df.plot()
+                        selector = (((((path_df['x']-wp[0])**2 + (path_df['y']-wp[1])**2)**0.5) <= parameters.goal_cutoff*parameters.robot_length).astype(int)).diff().astype(bool)
+                        for time_idx in path_df.index[selector]:
+                            plt.plot([time_idx]*2,[0, path_df['vn'].max()], colors[func_idx]+'--')
+
+                # new_df.plot()
                 plt.tight_layout()
-                plt.savefig('data/apfpaired_v_plot__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
+                plt.savefig('data/apfpaired_v_plot__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name),bbox_inches='tight')
                 plt.close()
+
+                viz.draw_path([paths_df_list[0].values,paths_df_list[1].values], mission, crew)
+                plt.tight_layout()
+                plt.savefig('data/apfpaired_path__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name),bbox_inches='tight')
+                plt.close()
+
+
 
     return df
 
@@ -308,7 +323,7 @@ def compare_damp_amp():
     return df
 
 def color_quiver_plt():
-    for mission_idx,crew_idx,wp_idx in [(2,2,1),(2,2,2),(2,3,1),(3,4,3)]:
+    for mission_idx,crew_idx,wp_idx in [(1,1,0)]: # (2,2,1),(2,2,2),(2,3,1),(3,4,3)]:
         mission = parameters.select_mission(mission_idx)
         crew = parameters.select_crew(crew_idx)
         for func_name in funcs:
@@ -337,11 +352,11 @@ def color_quiver_plt():
             plt.title('Potential Field for Goal %d Mission %d with Crew %d - %s' % ((wp_idx+1), mission_idx, crew_idx, 'Non-Proxemic' if func_name=='nonproxemic' else 'Proxemic'))
             # plt.gcf().set_size_inches(3.5,3)
             plt.tight_layout()
-            plt.savefig('data/quiver_goal%d_mission%d_crew%d_%s.png' % ((wp_idx+1),mission_idx,crew_idx,func_name))
-            plt.close()
+            # plt.savefig('data/quiver_goal%d_mission%d_crew%d_%s.png' % ((wp_idx+1),mission_idx,crew_idx,func_name))
+            # plt.close()
 
 
 if __name__ == '__main__':
     df = do_generate(False,False,False,do_paired_velocity=True)
     # color_quiver_plt()
-    df.to_csv( datetime.now().__format__('data/apf_summary_%Y_%m_%d__%H_%M_%S.csv'))
+    # df.to_csv( datetime.now().__format__('data/apf_summary_%Y_%m_%d__%H_%M_%S.csv'))

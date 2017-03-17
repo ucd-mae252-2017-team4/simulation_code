@@ -48,7 +48,7 @@ zz = np.zeros_like(xx)
 # put the grids together
 grid = np.stack((xx,yy,zz,zz,zz,zz), axis=1)
 
-def astar_analyze(do_path=True, do_distance=True, do_speed=False,do_contours=False,save_summary=True):
+def astar_analyze(do_path=True, do_distance=True, do_speed=False, do_contours=False, save_summary=True):
     df = pd.DataFrame(columns=df_columns,)
     for mission_idx in range(1,n_mission+1): #4
         # mission_idx = 3

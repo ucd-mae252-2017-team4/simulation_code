@@ -15,6 +15,7 @@ zz = np.zeros_like(xx)
 # put the grids together
 grid = np.stack((xx,yy,zz,zz,zz,zz), axis=1)
 
+func_names_list = ['proxemic','nonproxemic']
 funcs = {'proxemic': parameters.proxemic_apf_function,
  'nonproxemic': parameters.nonproxemic_apf_function }
 
@@ -29,7 +30,7 @@ use_b = 5.0
 
 dists_to_bin = [0, 0.15, 0.45, 1.20, 3.60, 100]
 
-def do_generate(do_path=True, do_distance=True, do_speed=False):
+def do_generate(do_path=True, do_distance=True, do_speed=False, do_paired_velocity=False):
     df_columns = ['type','mission','crew','time','max vel', 'average vel', 'distance', 'max accel', 'boundary collisions', 'crew collisions', 'min crew distance', '%% complete'] + \
         ['time in distance bin %d from crew %d' % (dist_idx, crewnum+1) for crewnum in range(4) for dist_idx in range(len(dists_to_bin[1:]))]
     idx = 0
@@ -49,7 +50,8 @@ def do_generate(do_path=True, do_distance=True, do_speed=False):
             else:
                 crew = parameters.select_crew(crew_idx)
 
-            for func_name in funcs:
+            paths_df_list = []
+            for func_name in func_names_list:
                 path = apf.apf_path_planner(
                     parameters.robot_initial_condition,
                     mission,
@@ -161,6 +163,8 @@ def do_generate(do_path=True, do_distance=True, do_speed=False):
                 row_data += [0] * (4 - crew.shape[0])*(len(dists_to_bin)-1)
                 df.loc[idx] = row_data
 
+                paths_df_list.append(path_df)
+
                 
                 idx += 1
 
@@ -187,6 +191,22 @@ def do_generate(do_path=True, do_distance=True, do_speed=False):
                 # plt.tight_layout()
                 # plt.savefig('data/quiver_mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
                 # plt.close()
+
+            if do_paired_velocity:
+                new_df = pd.DataFrame()
+                new_df['proxemic v'] = paths_df_list[0]['vn']
+                new_df['nonproxemic v'] = paths_df_list[1]['vn']
+
+                new_df['proxemic goals'] = 0
+                new_df['nonproxemic goals'] = 0
+                for wp in mission:
+                    for func_idx,func_name in enumerate(func_names_list):
+                        path_df = paths_df_list[func_idx]
+                        new_df[func_name + ' goals'] += ((((path_df['x']-wp[0])**2 + (path_df['y']-wp[1])**2)**0.5) <= parameters.goal_cutoff*parameters.robot_length).astype(float)*0.05
+                new_df.plot()
+                plt.tight_layout()
+                plt.savefig('data/apfpaired_v_plot__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name))
+                plt.close()
 
     return df
 
@@ -322,6 +342,6 @@ def color_quiver_plt():
 
 
 if __name__ == '__main__':
-    df = do_generate(False,False,True)
+    df = do_generate(False,False,False,do_paired_velocity=True)
     # color_quiver_plt()
     df.to_csv( datetime.now().__format__('data/apf_summary_%Y_%m_%d__%H_%M_%S.csv'))

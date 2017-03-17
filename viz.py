@@ -60,12 +60,22 @@ def draw_waypoints(mission):
                 ec='m',fill=False, lw=3
             ))
 
+velocity_bins = [2**-3, 2**-2, 2**-1]
+vel_color = 'ryg'
+
 # np array columns for robot_path: x,y,theta
-def draw_path(robot_path, mission, crew):
+def draw_path(robot_path, mission, crew, with_vel = False):
     plt.figure()
     plt.plot(robot_path[:,0],robot_path[:,1])
-    plt.axis('scaled')
     
+
+    if with_vel:
+        robot_v_norm = (robot_path[:,3]**2+robot_path[:,4]**2)**0.5
+        for vidx,vel in enumerate(velocity_bins):
+            selector = (robot_v_norm >= vel)
+            plt.scatter(robot_path[selector,0],robot_path[selector,1], color=vel_color[vidx])
+
+    plt.axis('scaled')
     draw_crew(crew)
 
     last_x = -100

@@ -65,6 +65,7 @@ def astar_analyze(do_path=True, do_distance=True, do_speed=False, do_contours=Fa
             else:
                 crew = parameters.select_crew(crew_idx)
 
+            paths_df_list = []
             for func_name in funcs:
                 idx = 100*mission_idx + 10*crew_idx + int(func_name =='proxemic')
 
@@ -187,6 +188,7 @@ def astar_analyze(do_path=True, do_distance=True, do_speed=False, do_contours=Fa
                 
                 row_data += [0] * (4 - crew.shape[0])*(len(dists_to_bin)-1)
                 df.loc[idx] = row_data
+                paths_df_list.append(path_df)
 
                 if do_contours:
                     if use_proxemic:
@@ -202,11 +204,31 @@ def astar_analyze(do_path=True, do_distance=True, do_speed=False, do_contours=Fa
                     viz.draw_crew(crew)
                     plt.xlim((0,parameters.module_size[0]))
                     plt.ylim((0,parameters.module_size[1]))
+                    
+                    plt.tick_params(
+                        axis='both',          # changes apply to the x-axis
+                        which='both',      # both major and minor ticks are affected
+                        bottom='off',      # ticks along the bottom edge are off
+                        top='off',         # ticks along the top edge are off
+                        left='off',
+                        right='off',
+                        labelleft='off',
+                        labelbottom='off') # labels along the bottom edge are off
                     plt.tight_layout()
 
-                    plt.savefig('data/crew_contour_crew%d_%s.png' % (crew_idx,func_name))
+
+
+                    plt.savefig('data/con%d%s.png' % (crew_idx,'p' if use_proxemic else 'np'),bbox_inches='tight')
                     plt.close()
 
+            colors = 'bg'
+            viz.draw_path([paths_df_list[0].values,paths_df_list[1].values], mission, crew)
+            plt.xlabel('x, m')
+            plt.ylabel('y, m')
+            plt.title('A* Paths on Mission %d with Crew %d' % (mission_idx, crew_idx))
+            plt.savefig('data/astarpaired_path__mission%d_crew%d.png' % (mission_idx,crew_idx),bbox_inches='tight')
+            plt.tight_layout()
+            plt.close()
 
 
 
@@ -216,37 +238,37 @@ def astar_analyze(do_path=True, do_distance=True, do_speed=False, do_contours=Fa
         df.to_csv( datetime.now().__format__('data/astar_summary_%Y_%m_%d__%H_%M_%S.csv'))
 
 if __name__ == '__main__':
-    # astar_analyze(False,False,False, True,save_summary=False)
+    astar_analyze(False,False,False, False,save_summary=False)
 
     ## plot grid
     # xlist = np.arange(-parameters.robot_x0-astar.dx,parameters.module_width-parameters.robot_x0+astar.dx,astar.dx)+parameters.robot_x0
     # ylist = np.arange(-parameters.robot_y0-astar.dx,parameters.module_height--parameters.robot_x0-astar.dx,astar.dy)+parameters.robot_y0
 
-    xlist = np.arange(-parameters.robot_x0+astar.dx/2,parameters.module_width,astar.dx)+parameters.robot_x0
-    ylist = np.arange(-parameters.robot_y0,parameters.module_height,astar.dy)+parameters.robot_y0
+    # xlist = np.arange(-parameters.robot_x0+astar.dx/2,parameters.module_width,astar.dx)+parameters.robot_x0
+    # ylist = np.arange(-parameters.robot_y0,parameters.module_height,astar.dy)+parameters.robot_y0
 
-    print(np.diff(xlist))
+    # print(np.diff(xlist))
 
-    xx,yy = np.meshgrid(xlist,ylist)
+    # xx,yy = np.meshgrid(xlist,ylist)
 
-    plt.figure()
-    plt.scatter(xx,yy,color='g', s=5)
-    plt.scatter([parameters.robot_x0], [parameters.robot_y0], color='b')
-    plt.axis('scaled')
-    plt.gca().add_patch(plt.Rectangle(
-                parameters.robot_initial_condition[0,parameters.XY_POS] - parameters.robot_length/2,
-                width=parameters.robot_length,
-                height=parameters.robot_length,
-                angle=0,
-                ec='b',
-                fill=False)) 
+    # plt.figure()
+    # plt.scatter(xx,yy,color='g', s=5)
+    # plt.scatter([parameters.robot_x0], [parameters.robot_y0], color='b')
+    # plt.axis('scaled')
+    # plt.gca().add_patch(plt.Rectangle(
+    #             parameters.robot_initial_condition[0,parameters.XY_POS] - parameters.robot_length/2,
+    #             width=parameters.robot_length,
+    #             height=parameters.robot_length,
+    #             angle=0,
+    #             ec='b',
+    #             fill=False)) 
 
-    plt.xlim((0,parameters.module_size[0]))
-    plt.ylim((0,parameters.module_size[1]))
-    plt.tight_layout()
+    # plt.xlim((0,parameters.module_size[0]))
+    # plt.ylim((0,parameters.module_size[1]))
+    # plt.tight_layout()
 
-    plt.savefig('astar_analyzegrid.png')
-    plt.close()
+    # plt.savefig('astar_analyzegrid.png')
+    # plt.close()
 
 
 

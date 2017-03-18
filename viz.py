@@ -66,11 +66,18 @@ def draw_waypoints(mission, labels=False):
                 ec='m',fill=False, lw=3
             ))
         if labels:
-            plt.text(
-                wp[0]-0.0625, 
-                wp[1]-0.0625,
-                '%d' % (wi+1), multialignment='center'
-            )
+            if wi < 4:
+                plt.text(
+                    wp[0]-0.0625, 
+                    wp[1]-0.0625,
+                    '%d' % (wi+1), multialignment='center', fontsize=16,
+                )
+            else:
+                plt.text(
+                    wp[0]+0.0625+0.75*parameters.robot_length*parameters.goal_cutoff, 
+                    wp[1]-0.0625-1*parameters.robot_length*parameters.goal_cutoff,
+                    '%d' % (wi+1), multialignment='center', fontsize=16,
+                )
 
 velocity_bins = [2**-3, 2**-2, 2**-1]
 vel_color = 'ryg'
@@ -81,9 +88,12 @@ def draw_path(robot_paths, mission, crew, with_vel = False, key=['proxemic','non
     plt.figure()
     if not isinstance(robot_paths,list):
         robot_paths = [robot_paths]
+        do_legends = False
+    else: 
+        do_legends = True
 
     for path_idx,robot_path in enumerate(robot_paths):
-        plt.plot(robot_path[:,0],robot_path[:,1],label=key[path_idx])
+        plt.plot(robot_path[:,0],robot_path[:,1])
 
         last_x = -100
         last_y = -100
@@ -106,6 +116,9 @@ def draw_path(robot_paths, mission, crew, with_vel = False, key=['proxemic','non
             for vidx,vel in enumerate(velocity_bins):
                 selector = (robot_v_norm >= vel)
                 plt.scatter(robot_path[selector,0],robot_path[selector,1], color=vel_color[vidx])
+
+    if False: #do_legends:
+        plt.legend(key)
 
     plt.axis('scaled')
     draw_crew(crew)
@@ -132,8 +145,8 @@ if __name__ == '__main__':
         plt.xlim((0,parameters.module_size[0]))
         plt.ylim((0,parameters.module_size[1]))
 
-        plt.xlabel('x, m')
-        plt.ylabel('y, m')
+        # plt.xlabel('x, m')
+        # plt.ylabel('y, m')
         plt.title('Crew Positions for Crew Configuration %d' % crew_idx)
         plt.tight_layout()
         plt.savefig('crew%d' % crew_idx,bbox_inches='tight')
@@ -153,10 +166,18 @@ if __name__ == '__main__':
         draw_waypoints(mission, True)
         plt.xlim((0,parameters.module_size[0]))
         plt.ylim((0,parameters.module_size[1]))
-
-        plt.xlabel('x, m')
-        plt.ylabel('y, m')
-        plt.title('Waypoint Positions for Mission %d' % mission_idx)
+        plt.tick_params(
+            axis='both',          # changes apply to the x-axis
+            which='both',      # both major and minor ticks are affected
+            bottom='off',      # ticks along the bottom edge are off
+            top='off',         # ticks along the top edge are off
+            left='off',
+            right='off',
+            labelleft='off',
+            labelbottom='off') # labels along the bottom edge are off
+        # plt.xlabel('x, m')
+        # plt.ylabel('y, m')
+        # plt.title('Waypoint Positions for Mission %d' % mission_idx)
         plt.tight_layout()
         plt.savefig('mission%d' % mission_idx,bbox_inches='tight')
         plt.close()

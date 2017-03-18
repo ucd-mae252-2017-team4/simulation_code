@@ -22,6 +22,9 @@ funcs = {'proxemic': parameters.proxemic_apf_function,
 n_mission = 3
 n_crew = 4
 
+# n_mission=1
+# n_crew=1
+
 idx = 0
 path_columns = ['x','y','theta','vx','vy','vtheta', 'fx','fy', 'tth']
 
@@ -36,11 +39,11 @@ def do_generate(do_path=True, do_distance=True, do_speed=False, do_paired_veloci
     idx = 0
     df = pd.DataFrame(columns=df_columns,)
     for mission_idx in range(1,n_mission+1): #4
-        # mission_idx = 1
+        # mission_idx = 2
         mission = parameters.select_mission(mission_idx)
 
         for crew_idx in range(1,n_crew+1): #5
-            # crew_idx = 1
+            # crew_idx = 2
             if (crew_idx == 5):
                 if (mission_idx==1):
                     crew = parameters.select_crew(1)
@@ -198,28 +201,81 @@ def do_generate(do_path=True, do_distance=True, do_speed=False, do_paired_veloci
                 new_df['proxemic'] = paths_df_list[0]['vn']
                 new_df['non-proxemic'] = paths_df_list[1]['vn']
 
+                # plt.plot(new_df['proxemic'], 'b')
+                # plt.plot(new_df['non-proxemic'], 'g')
+
+                # new_df['proxemic goals'] = 0
+                # new_df['nonproxemic goals'] = 0
+
                 plt.figure()
-                plt.plot(new_df['proxemic'], 'b')
-                plt.plot(new_df['non-proxemic'], 'g')
 
-                new_df['proxemic goals'] = 0
-                new_df['nonproxemic goals'] = 0
-                for wp in mission:
-                    for func_idx,func_name in enumerate(func_names_list):
-                        path_df = paths_df_list[func_idx]
-                        selector = (((((path_df['x']-wp[0])**2 + (path_df['y']-wp[1])**2)**0.5) <= parameters.goal_cutoff*parameters.robot_length).astype(int)).diff().astype(bool)
-                        for time_idx in path_df.index[selector]:
-                            plt.plot([time_idx]*2,[0, path_df['vn'].max()], colors[func_idx]+'--')
+                # for wp_idx,wp in enumerate(mission):
+                #     for func_idx,func_name in enumerate(func_names_list):
+                #         path_df = paths_df_list[func_idx]
+                #         selector = (((((path_df['x']-wp[0])**2 + (path_df['y']-wp[1])**2)**0.5) <= parameters.goal_cutoff*parameters.robot_length).astype(int)).diff().astype(bool)
+                #         if ((((path_df['x'].iloc[0]-wp[0])**2 + (path_df['y'].iloc[0]-wp[1])**2)**0.5) <= parameters.goal_cutoff*parameters.robot_length):
+                #             selector[0] = True
+                #         else:
+                #             selector[0] = False
+                #         for time_idxidx,time_idx in enumerate(path_df.index[selector]):
+                #             plt.plot([time_idx]*2,[0, 4.5], colors[func_idx]+'-', linewidth=0.5)
+                #         # if len(path_df.index[selector]) == 2:
+                #         print(path_df.index[selector])
+                #         #     text_xpos = np.mean(path_df.index[selector])
+                #         # else:
+                #         #     text_xpos = path_df.index[selector]
+                #         if len(path_df.index[selector]) > 0:
+                #             plt.text(path_df.index[selector].min()+5, 4.25, '%d' % wp_idx, color=colors[func_idx])
 
-                # new_df.plot()
+
+                # plt.plot(paths_df_list[0]['distance from crew 1'],'b')
+                # plt.plot(paths_df_list[0]['distance from crew 2'],'b--')
+
+                # plt.plot(paths_df_list[1]['distance from crew 1'],'g')
+                # plt.plot(paths_df_list[1]['distance from crew 2'],'g--')
+
+                # zone_label = {0.15: 'Intimate', 0.45: 'Close Intimate', 1.2: 'Social', 3.6: 'Public'}
+                # max_t = np.max([paths_df_list[0].index[-1],paths_df_list[1].index[-1]])
+                # for line_y in dists_to_bin[1:-1]:
+                #         plt.plot([0, max_t],[line_y]*2,'k--')
+                #         plt.text(max_t-2, line_y, zone_label[line_y], horizontalalignment='right')
+
+                # plt.xlabel('t, sec')
+                # plt.ylabel('distance, m')
+                # plt.xlim(0, max_t)
+                # # plt.title('Robot Distance from Crew Member 2\nOn Mission %d with Crew Configuration %d' % (mission_idx, crew_idx))
+                # plt.title('Robot Distance from Crew\nOn Mission %d with Crew Configuration %d' % (mission_idx, crew_idx))
+                # plt.savefig('data/apfpaired_distance__mission%d_crew%d.png' % (mission_idx,crew_idx),bbox_inches='tight')
+                # plt.tight_layout()
+                # plt.close()
+
+
+
+
+                new_df.plot()
                 plt.tight_layout()
-                plt.savefig('data/apfpaired_v_plot__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name),bbox_inches='tight')
+                plt.savefig('data/apfpaired_v_plot__mission%d_crew%d.png' % (mission_idx,crew_idx),bbox_inches='tight')
                 plt.close()
 
                 viz.draw_path([paths_df_list[0].values,paths_df_list[1].values], mission, crew)
+                plt.xlabel('x, m')
+                plt.ylabel('y, m')
+                plt.title('APF Paths on Mission %d with Crew %d' % (mission_idx, crew_idx))
+                plt.savefig('data/apfpaired_path__mission%d_crew%d.png' % (mission_idx,crew_idx),bbox_inches='tight')
                 plt.tight_layout()
-                plt.savefig('data/apfpaired_path__mission%d_crew%d_%s.png' % (mission_idx,crew_idx,func_name),bbox_inches='tight')
                 plt.close()
+
+                # if mission_idx == 2 and crew_idx == 3:
+                #     plt.figure()
+                #     plt.plot(paths_df_list[0]['distance from crew 2'],)
+                #     plt.plot( paths_df_list[1]['distance from crew 2'])
+                #     # plt.legend(['proxemic', 'non-proxemic'])
+                #     plt.xlabel('t, sec')
+                #     plt.ylabel('distance, m')
+                #     plt.title('Robot Distance from Crew Member 2\nOn Mission %d with Crew Configuration %d' % (mission_idx, crew_idx))
+                #     plt.savefig('data/apfpaired_distance__mission%d_crew%d.png' % (mission_idx,crew_idx),bbox_inches='tight')
+                #     plt.tight_layout()
+                #     plt.close()
 
 
 
